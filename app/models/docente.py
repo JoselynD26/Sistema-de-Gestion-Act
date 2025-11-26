@@ -4,6 +4,8 @@ from app.core.config import Base
 from app.models.relaciones import docente_materia, docente_carrera
 
 
+from sqlalchemy.orm import relationship
+
 class Docente(Base):
     __tablename__ = "docente"
 
@@ -14,5 +16,9 @@ class Docente(Base):
     nombres = Column(String, nullable=False)
     regimen = Column(Enum("LOES", "Codigo de trabajo", name="regimen_enum"), nullable=False)
     observacion = Column(Enum("Medio tiempo", "Tiempo completo", name="observacion_enum"), nullable=False)
+
     materias = relationship("Materia", secondary=docente_materia, back_populates="docentes")
     carreras = relationship("Carrera", secondary=docente_carrera, back_populates="docentes")
+
+    # 🔗 Relación inversa con Escritorio
+    escritorio = relationship("Escritorio", back_populates="docente", uselist=False)

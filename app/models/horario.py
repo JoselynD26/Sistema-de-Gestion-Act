@@ -1,13 +1,15 @@
 from sqlalchemy import Column, Integer, Date, Time, String, ForeignKey
+from sqlalchemy.orm import relationship
 from app.core.config import Base
 
 class Horario(Base):
     __tablename__ = "horario"
 
     id = Column(Integer, primary_key=True, index=True)
-    fecha = Column(Date)
-    hora = Column(Time)
+    fecha = Column(Date, nullable=False)
+    hora = Column(Time, nullable=False)
     estado = Column(String, default="activo")
+
     id_docente = Column(Integer, ForeignKey("docente.id"))
     id_materia = Column(Integer, ForeignKey("materia.id"))
     id_aula = Column(Integer, ForeignKey("aula.id"))
