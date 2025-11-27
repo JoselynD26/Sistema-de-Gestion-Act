@@ -15,6 +15,19 @@ def listar_cursos(db: Session):
 def obtener_curso(db: Session, curso_id: int):
     return db.query(Curso).get(curso_id)
 
+def actualizar_curso(db: Session, id_curso: int, curso_data):
+    curso = db.query(Curso).filter(Curso.id == id_curso).first()  
+
+    if not curso:
+        return None
+
+    for key, value in curso_data.dict().items():
+        setattr(curso, key, value)
+
+    db.commit()
+    db.refresh(curso)
+    return curso
+
 def eliminar_curso(db: Session, curso_id: int):
     curso = db.query(Curso).get(curso_id)
     if curso:

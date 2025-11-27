@@ -28,6 +28,16 @@ def listar_carreras(db: Session = Depends(get_db)):
 def obtener_carrera(id_carrera: int, db: Session = Depends(get_db)):
     return crud.obtener_carrera(db, id_carrera)
 
+# Actualizar carrera
+@router.put("/carreras/{id_carrera}", response_model=CarreraOut)
+def actualizar_carrera(id_carrera: int, carrera: CarreraCreate, db: Session = Depends(get_db)):
+    carrera_actualizada = crud.actualizar_carrera(db, id_carrera, carrera)
+    
+    if carrera_actualizada is None:
+        return {"mensaje": "Carrera no encontrada"}
+
+    return carrera_actualizada
+
 # Eliminar carrera
 @router.delete("/carreras/{id_carrera}")
 def eliminar_carrera(id_carrera: int, db: Session = Depends(get_db)):

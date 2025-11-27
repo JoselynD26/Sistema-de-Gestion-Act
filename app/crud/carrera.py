@@ -15,6 +15,19 @@ def listar_carreras(db: Session):
 def obtener_carrera(db: Session, carrera_id: int):
     return db.query(Carrera).get(carrera_id)
 
+def actualizar_carrera(db: Session, id_carrera: int, carrera_data):
+    carrera = db.query(Carrera).filter(Carrera.id == id_carrera).first()  
+
+    if not carrera:
+        return None
+
+    for key, value in carrera_data.dict().items():
+        setattr(carrera, key, value)
+
+    db.commit()
+    db.refresh(carrera)
+    return carrera
+
 def eliminar_carrera(db: Session, carrera_id: int):
     carrera = db.query(Carrera).get(carrera_id)
     if carrera:

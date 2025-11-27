@@ -25,6 +25,15 @@ def listar_materias(db: Session = Depends(get_db)):
 def obtener_materia(id_materia: int, db: Session = Depends(get_db)):
     return crud.obtener_materia(db, id_materia)
 
+@router.put("/materias/{id_materia}", response_model=MateriaOut)
+def actualizar_materia(id_materia: int, materia: MateriaCreate, db: Session = Depends(get_db)):
+    materia_actualizada = crud.actualizar_materia(db, id_materia, materia)
+
+    if materia_actualizada is None:
+        return {"mensaje": "Materia no encontrada"}
+
+    return materia_actualizada
+
 @router.delete("/materias/{id_materia}")
 def eliminar_materia(id_materia: int, db: Session = Depends(get_db)):
     materia = crud.eliminar_materia(db, id_materia)

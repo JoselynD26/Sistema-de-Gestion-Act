@@ -25,6 +25,15 @@ def listar_docentes(db: Session = Depends(get_db)):
 def obtener_docente(id_docente: int, db: Session = Depends(get_db)):
     return crud.obtener_docente(db, id_docente)
 
+@router.put("/docentes/{id_docente}", response_model=DocenteOut)
+def actualizar_docente(id_docente: int, docente: DocenteCreate, db: Session = Depends(get_db)):
+    docente_actualizado = crud.actualizar_docente(db, id_docente, docente)
+
+    if docente_actualizado is None:
+        return {"mensaje": "Docente no encontrado"}
+
+    return docente_actualizado
+
 @router.delete("/docentes/{id_docente}")
 def eliminar_docente(id_docente: int, db: Session = Depends(get_db)):
     docente = crud.eliminar_docente(db, id_docente)

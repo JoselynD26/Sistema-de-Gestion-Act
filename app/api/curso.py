@@ -25,6 +25,15 @@ def listar_cursos(db: Session = Depends(get_db)):
 def obtener_curso(id_curso: int, db: Session = Depends(get_db)):
     return crud.obtener_curso(db, id_curso)
 
+@router.put("/cursos/{id_curso}", response_model=CursoOut)
+def actualizar_curso(id_curso: int, curso: CursoCreate, db: Session = Depends(get_db)):
+    curso_actualizado = crud.actualizar_curso(db, id_curso, curso)
+
+    if curso_actualizado is None:
+        return {"mensaje": "Curso no encontrado"}
+
+    return curso_actualizado
+
 @router.delete("/cursos/{id_curso}")
 def eliminar_curso(id_curso: int, db: Session = Depends(get_db)):
     curso = crud.eliminar_curso(db, id_curso)

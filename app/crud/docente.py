@@ -15,6 +15,19 @@ def listar_docentes(db: Session):
 def obtener_docente(db: Session, docente_id: int):
     return db.query(Docente).get(docente_id)
 
+def actualizar_docente(db: Session, id_docente: int, docente_data):
+    docente = db.query(Docente).filter(Docente.id == id_docente).first()  
+
+    if not docente:
+        return None
+
+    for key, value in docente_data.dict().items():
+        setattr(docente, key, value)
+
+    db.commit()
+    db.refresh(docente)
+    return docente
+
 def eliminar_docente(db: Session, docente_id: int):
     docente = db.query(Docente).get(docente_id)
     if docente:

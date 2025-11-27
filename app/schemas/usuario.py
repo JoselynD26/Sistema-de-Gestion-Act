@@ -23,7 +23,7 @@ class UsuarioOut(BaseModel):
 
 class UsuarioLogin(BaseModel):
     correo: EmailStr
-    clave: str
+    contrasena: str
 
 class UsuarioRol(Base):
     __tablename__ = "usuario_rol"

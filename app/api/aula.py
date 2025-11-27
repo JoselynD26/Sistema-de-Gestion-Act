@@ -28,6 +28,16 @@ def listar_aulas(db: Session = Depends(get_db)):
 def obtener_aula(id_aula: int, db: Session = Depends(get_db)):
     return crud.obtener_aula(db, id_aula)
 
+# Actualizar aula
+@router.put("/aulas/{id_aula}", response_model=AulaOut)
+def actualizar_aula(id_aula: int, aula: AulaCreate, db: Session = Depends(get_db)):
+    aula_actualizada = crud.actualizar_aula(db, id_aula, aula)
+    
+    if aula_actualizada is None:
+        return {"mensaje": "Aula no encontrada"}
+
+    return aula_actualizada
+
 # Eliminar aula
 @router.delete("/aulas/{id_aula}")
 def eliminar_aula(id_aula: int, db: Session = Depends(get_db)):

@@ -22,7 +22,7 @@ def registrar_admin(usuario: UsuarioCreate, db: Session = Depends(get_db)):
 
 @router.post("/login/")
 def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
-    usuario = autenticar_usuario(db, datos.correo, datos.clave)
+    usuario = autenticar_usuario(db, datos.correo, datos.contrasena)
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     token = crear_token(usuario.id, usuario.rol)

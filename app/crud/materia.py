@@ -15,6 +15,19 @@ def listar_materias(db: Session):
 def obtener_materia(db: Session, materia_id: int):
     return db.query(Materia).get(materia_id)
 
+def actualizar_materia(db: Session, id_materia: int, materia_data):
+    materia = db.query(Materia).filter(Materia.id == id_materia).first()  
+
+    if not materia:
+        return None
+
+    for key, value in materia_data.dict().items():
+        setattr(materia, key, value)
+
+    db.commit()
+    db.refresh(materia)
+    return materia
+
 def eliminar_materia(db: Session, materia_id: int):
     materia = db.query(Materia).get(materia_id)
     if materia:

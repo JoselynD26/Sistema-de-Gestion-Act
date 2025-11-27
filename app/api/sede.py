@@ -25,6 +25,15 @@ def listar_sedes(db: Session = Depends(get_db)):
 def obtener_sede(id_sede: int, db: Session = Depends(get_db)):
     return crud.obtener_sede(db, id_sede)
 
+@router.put("/sedes/{id_sede}", response_model=SedeOut)
+def actualizar_sede(id_sede: int, data: SedeCreate, db: Session = Depends(get_db)):
+    sede_actualizada = crud.actualizar_sede(db, id_sede, data)
+
+    if sede_actualizada is None:
+        return {"mensaje": "Sede no encontrada"}
+
+    return sede_actualizada
+
 @router.delete("/sedes/{id_sede}")
 def eliminar_sede(id_sede: int, db: Session = Depends(get_db)):
     sede = crud.eliminar_sede(db, id_sede)

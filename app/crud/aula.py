@@ -15,6 +15,19 @@ def listar_aulas(db: Session):
 def obtener_aula(db: Session, aula_id: int):
     return db.query(Aula).get(aula_id)
 
+def actualizar_aula(db: Session, id_aula: int, aula_data):
+    aula = db.query(Aula).filter(Aula.id == id_aula).first()
+
+    if not aula:
+        return None
+
+    for key, value in aula_data.dict().items():
+        setattr(aula, key, value)
+
+    db.commit()
+    db.refresh(aula)
+    return aula
+
 def eliminar_aula(db: Session, aula_id: int):
     aula = db.query(Aula).get(aula_id)
     if aula:

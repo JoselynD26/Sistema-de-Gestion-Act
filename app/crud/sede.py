@@ -15,6 +15,19 @@ def listar_sedes(db: Session):
 def obtener_sede(db: Session, sede_id: int):
     return db.query(Sede).get(sede_id)
 
+def actualizar_sede(db: Session, id_sede: int, data):
+    sede = db.query(Sede).filter(Sede.id == id_sede).first()  
+
+    if not sede:
+        return None
+
+    for key, value in data.dict().items():
+        setattr(sede, key, value)
+
+    db.commit()
+    db.refresh(sede)
+    return sede
+
 def eliminar_sede(db: Session, sede_id: int):
     sede = db.query(Sede).get(sede_id)
     if sede:
