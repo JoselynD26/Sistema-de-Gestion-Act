@@ -2,14 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-# Importación de rutas
+# Importación de rutas desde app/api
 from app.api import (
     docente, aula, materia, reserva,
     carrera, curso, horario, plaza, sede, sala_profesores, escritorio,
     materia_carrera, sala_carrera, curso_aula, curso_horario,
     docente_materia, docente_carrera, auth, docente_vinculacion,
     usuario, usuario_rol, rol, permiso, rol_permiso,
-    notificacion, croquis, curso_vinculacion, panel_inicio
+    notificacion, croquis, curso_vinculacion, panel_inicio,
+    sala   # ✅ módulo de Salas
 )
 
 app = FastAPI(
@@ -18,7 +19,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# -------------------
 # Seguridad global para Swagger
+# -------------------
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
@@ -43,16 +46,20 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-# CORS para permitir acceso desde frontend
+# -------------------
+# CORS para permitir acceso desde frontend Flutter Web
+# -------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # puedes restringir a ["http://localhost:49711"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# -------------------
 # Rutas principales
+# -------------------
 app.include_router(docente.router)
 app.include_router(aula.router)
 app.include_router(materia.router)
@@ -81,3 +88,13 @@ app.include_router(croquis.router)
 app.include_router(curso_vinculacion.router)
 app.include_router(panel_inicio.router)
 app.include_router(docente_vinculacion.router)
+
+# ✅ Router de Salas
+# Como en app/api/sala.py ya definiste las rutas sin prefijo (/ , /sede/{id}, /{id}),
+# aquí sí usamos prefix="/salas" para que queden limpias:
+#   POST /salas/
+#   GET /salas/sede/{id}
+#   GET /salas/{id}
+#   PUT /salas/{id}
+#   DELETE /salas/{id}
+app.include_router(sala.router, prefix="/salas", tags=["Salas"])

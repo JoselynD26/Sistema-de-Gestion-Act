@@ -11,7 +11,7 @@ class Escritorio(Base):
     sala_id = Column(Integer, ForeignKey("sala.id"), nullable=False)
     docente_id = Column(Integer, ForeignKey("docente.id"), nullable=True)
     carrera_id = Column(Integer, ForeignKey("carrera.id"), nullable=False)
-    croquis_id = Column(Integer, ForeignKey("croquis.id"), nullable=True)
+
 
     estado = Column(
         Enum("libre", "ocupado", name="estado_escritorio_enum"),
@@ -26,4 +26,5 @@ class Escritorio(Base):
 
     sala = relationship("Sala", back_populates="escritorios")
     docente = relationship("Docente", back_populates="escritorio", uselist=False)
-    croquis = relationship("Croquis", back_populates="escritorios")
+    carrera = relationship("Carrera", back_populates="escritorios")
+

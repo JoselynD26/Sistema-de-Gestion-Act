@@ -21,6 +21,10 @@ def crear_curso(curso: CursoCreate, db: Session = Depends(get_db)):
 def listar_cursos(db: Session = Depends(get_db)):
     return crud.listar_cursos(db)
 
+@router.get("/cursos/sede/{id_sede}", response_model=list[CursoOut])   # ✅ nuevo endpoint
+def listar_cursos_por_sede(id_sede: int, db: Session = Depends(get_db)):
+    return crud.listar_cursos_por_sede(db, id_sede)
+
 @router.get("/cursos/{id_curso}", response_model=CursoOut)
 def obtener_curso(id_curso: int, db: Session = Depends(get_db)):
     return crud.obtener_curso(db, id_curso)
@@ -28,10 +32,8 @@ def obtener_curso(id_curso: int, db: Session = Depends(get_db)):
 @router.put("/cursos/{id_curso}", response_model=CursoOut)
 def actualizar_curso(id_curso: int, curso: CursoCreate, db: Session = Depends(get_db)):
     curso_actualizado = crud.actualizar_curso(db, id_curso, curso)
-
     if curso_actualizado is None:
         return {"mensaje": "Curso no encontrado"}
-
     return curso_actualizado
 
 @router.delete("/cursos/{id_curso}")

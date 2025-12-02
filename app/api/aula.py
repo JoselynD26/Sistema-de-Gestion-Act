@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.config import SessionLocal
+from app.models.aula import Aula
 from app.schemas.aula import AulaCreate, AulaOut
 from app.crud import aula as crud
 
@@ -12,6 +13,10 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@router.get("/aulas/sede/{id_sede}")
+def aulas_por_sede(id_sede: int, db: Session = Depends(get_db)):
+    return db.query(Aula).filter(Aula.id_sede == id_sede).all()
 
 # Crear aula
 @router.post("/aulas/", response_model=AulaOut)

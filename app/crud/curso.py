@@ -12,12 +12,14 @@ def crear_curso(db: Session, datos: CursoCreate):
 def listar_cursos(db: Session):
     return db.query(Curso).all()
 
+def listar_cursos_por_sede(db: Session, id_sede: int):   # ✅ nuevo
+    return db.query(Curso).filter(Curso.id_sede == id_sede).all()
+
 def obtener_curso(db: Session, curso_id: int):
-    return db.query(Curso).get(curso_id)
+    return db.query(Curso).filter(Curso.id == curso_id).first()
 
-def actualizar_curso(db: Session, id_curso: int, curso_data):
-    curso = db.query(Curso).filter(Curso.id == id_curso).first()  
-
+def actualizar_curso(db: Session, id_curso: int, curso_data: CursoCreate):
+    curso = db.query(Curso).filter(Curso.id == id_curso).first()
     if not curso:
         return None
 
@@ -29,7 +31,7 @@ def actualizar_curso(db: Session, id_curso: int, curso_data):
     return curso
 
 def eliminar_curso(db: Session, curso_id: int):
-    curso = db.query(Curso).get(curso_id)
+    curso = db.query(Curso).filter(Curso.id == curso_id).first()
     if curso:
         db.delete(curso)
         db.commit()

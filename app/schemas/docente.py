@@ -16,6 +16,7 @@ class DocenteBase(BaseModel):
     nombres: str
     regimen: Regimen
     observacion: Observacion
+    sede_id: int 
 
 class DocenteCreate(DocenteBase):
     pass

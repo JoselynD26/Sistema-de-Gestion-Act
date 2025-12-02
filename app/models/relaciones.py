@@ -21,3 +21,10 @@ sala_carrera = Table(
     Column("sala_id", Integer, ForeignKey("sala.id"), primary_key=True),
     Column("carrera_id", Integer, ForeignKey("carrera.id"), primary_key=True)
 )
+
+sede_sala = Table(
+    "sede_sala",
+    Base.metadata,
+    Column("sede_id", Integer, ForeignKey("sede.id"), primary_key=True),
+    Column("sala_id", Integer, ForeignKey("sala.id"), primary_key=True),
+)                                   

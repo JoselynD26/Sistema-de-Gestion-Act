@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models import Sala, Escritorio, Docente, Carrera
-
+# Sirve para obtener el croquis de escritorios por sala o sede
 def croquis_por_sala(db: Session, sala_id: int):
     sala = db.query(Sala).get(sala_id)
     if not sala:

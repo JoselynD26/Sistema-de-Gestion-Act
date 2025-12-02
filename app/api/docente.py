@@ -21,6 +21,10 @@ def crear_docente(docente: DocenteCreate, db: Session = Depends(get_db)):
 def listar_docentes(db: Session = Depends(get_db)):
     return crud.listar_docentes(db)
 
+@router.get("/docentes/sede/{id_sede}", response_model=list[DocenteOut])  # ✅ nuevo endpoint
+def listar_docentes_por_sede(id_sede: int, db: Session = Depends(get_db)):
+    return crud.listar_docentes_por_sede(db, id_sede)
+
 @router.get("/docentes/{id_docente}", response_model=DocenteOut)
 def obtener_docente(id_docente: int, db: Session = Depends(get_db)):
     return crud.obtener_docente(db, id_docente)
@@ -28,10 +32,8 @@ def obtener_docente(id_docente: int, db: Session = Depends(get_db)):
 @router.put("/docentes/{id_docente}", response_model=DocenteOut)
 def actualizar_docente(id_docente: int, docente: DocenteCreate, db: Session = Depends(get_db)):
     docente_actualizado = crud.actualizar_docente(db, id_docente, docente)
-
     if docente_actualizado is None:
         return {"mensaje": "Docente no encontrado"}
-
     return docente_actualizado
 
 @router.delete("/docentes/{id_docente}")

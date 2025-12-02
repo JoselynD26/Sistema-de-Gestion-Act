@@ -28,5 +28,5 @@ class UsuarioLogin(BaseModel):
 class UsuarioRol(Base):
     __tablename__ = "usuario_rol"
     id = Column(Integer, primary_key=True, index=True)
-    id_usuario = Column(Integer, ForeignKey("usuarios.id"))
+    id_usuario = Column(Integer, ForeignKey("usuario.id"))
     id_rol = Column(Integer, ForeignKey("roles.id"))

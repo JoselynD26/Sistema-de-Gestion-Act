@@ -5,7 +5,7 @@ from app.schemas.usuario import UsuarioCreate
 from app.schemas.usuario_rol import UsuarioRolCreate
 from app.crud.usuario_rol import asignar_rol_a_usuario
 from passlib.hash import bcrypt
-
+# Sirve para registrar un usuario con rol docente
 def registrar_docente(db: Session, datos: UsuarioCreate):
     hashed = bcrypt.hash(datos.contrasena)
     nuevo = Usuario(

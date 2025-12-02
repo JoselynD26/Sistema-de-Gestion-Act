@@ -4,7 +4,7 @@ from app.schemas.reserva import ReservaCreate
 from app.schemas.notificacion import NotificacionCreate
 from app.crud.reserva import crear_reserva, obtener_reserva, actualizar_estado_reserva, listar_reservas
 from app.crud.notificacion import crear_notificacion
-
+# Sirve para gestionar las reservas y notificaciones relacionadas
 def crear_reserva_controller(db: Session, datos: ReservaCreate):
     return crear_reserva(db, datos)
 

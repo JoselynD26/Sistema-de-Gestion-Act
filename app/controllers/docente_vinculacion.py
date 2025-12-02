@@ -7,7 +7,7 @@ from app.models.escritorio import Escritorio
 from app.models.docente_carrera import DocenteCarrera
 from app.models.docente_materia import DocenteMateria
 from app.models.docente_sala import DocenteSala
-
+# Sirve para obtener una vista de docentes con sus vinculaciones
 def vista_docentes_con_vinculaciones(db: Session):
     docentes = db.query(Docente).all()
     resultado = []

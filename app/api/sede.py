@@ -12,6 +12,21 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+@router.get("/modulos-sede/{id_sede}")
+def modulos_por_sede(id_sede: int, db: Session = Depends(get_db)):
+    # Aquí puedes decidir dinámicamente qué módulos tiene cada sede
+    return [
+        {"titulo": "Carreras", "icono": "school"},
+        {"titulo": "Aulas", "icono": "meeting_room"},
+        {"titulo": "Escritorios", "icono": "desktop_windows"},
+        {"titulo": "Docentes", "icono": "person"},
+        {"titulo": "Cursos", "icono": "class"}, 
+        {"titulo": "Materias", "icono": "book"},
+        {"titulo": "Horarios", "icono": "schedule"}, 
+         {"titulo": "Salas", "icono": "business"},   # ✅ nuevo módulo
+
+    ]
 
 @router.post("/sedes/", response_model=SedeOut)
 def crear_sede(data: SedeCreate, db: Session = Depends(get_db)):

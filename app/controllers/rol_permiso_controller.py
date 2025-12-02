@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models.rol import Rol
 from app.models.permiso import Permiso
-
+# Sirve para obtener una vista de roles con sus permisos
 def vista_roles_con_permisos(db: Session):
     roles = db.query(Rol).filter(Rol.nombre.in_(["admin", "docente"])).all()
     resultado = []

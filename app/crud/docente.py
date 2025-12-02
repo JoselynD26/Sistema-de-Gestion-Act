@@ -12,12 +12,14 @@ def crear_docente(db: Session, datos: DocenteCreate):
 def listar_docentes(db: Session):
     return db.query(Docente).all()
 
+def listar_docentes_por_sede(db: Session, id_sede: int):
+    return db.query(Docente).filter(Docente.sede_id == id_sede).all()
+
 def obtener_docente(db: Session, docente_id: int):
-    return db.query(Docente).get(docente_id)
+    return db.query(Docente).filter(Docente.id == docente_id).first()
 
-def actualizar_docente(db: Session, id_docente: int, docente_data):
-    docente = db.query(Docente).filter(Docente.id == id_docente).first()  
-
+def actualizar_docente(db: Session, id_docente: int, docente_data: DocenteCreate):
+    docente = db.query(Docente).filter(Docente.id == id_docente).first()
     if not docente:
         return None
 
@@ -29,7 +31,7 @@ def actualizar_docente(db: Session, id_docente: int, docente_data):
     return docente
 
 def eliminar_docente(db: Session, docente_id: int):
-    docente = db.query(Docente).get(docente_id)
+    docente = db.query(Docente).filter(Docente.id == docente_id).first()
     if docente:
         db.delete(docente)
         db.commit()

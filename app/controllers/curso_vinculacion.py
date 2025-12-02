@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from app.models import Curso, Sede, Aula, Horario, CursoAula, CursoHorario, Materia, Docente
 from app.models.materia_carrera import MateriaCarrera
 from app.models.docente_materia import DocenteMateria
-
+# Sirve para obtener una vista de cursos con sus detalles y vinculaciones
 def vista_cursos_con_detalle(db: Session):
     cursos = db.query(Curso).all()
     resultado = []

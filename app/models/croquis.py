@@ -9,5 +9,3 @@ class Croquis(Base):
     nombre = Column(String(100))
     sede_id = Column(Integer, ForeignKey("sede.id"))
     imagen_url = Column(String)
-
-    escritorios = relationship("Escritorio", back_populates="croquis")
