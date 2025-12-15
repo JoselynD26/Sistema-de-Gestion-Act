@@ -3,10 +3,11 @@ from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioCreate
 from app.models.usuario_rol import UsuarioRol
 from app.schemas.usuario_rol import UsuarioRolCreate
-from passlib.hash import bcrypt
+#from passlib.hash import bcrypt
+from passlib.hash import argon2
 
 def crear_usuario(db: Session, datos: UsuarioCreate):
-    hashed = bcrypt.hash(datos.contrasena)
+    hashed = argon2.hash(datos.contrasena)
     nuevo = Usuario(
         nombres=datos.nombres,
         apellidos=datos.apellidos,
@@ -22,7 +23,7 @@ def crear_usuario(db: Session, datos: UsuarioCreate):
 
 def autenticar_usuario(db: Session, correo: str, contrasena: str):
     usuario = db.query(Usuario).filter_by(correo=correo).first()
-    if not usuario or not bcrypt.verify(contrasena, usuario.contrasena):
+    if not usuario or not argon2.verify(contrasena, usuario.contrasena):
         return None
     return usuario
 
@@ -40,7 +41,7 @@ def eliminar_usuario(db: Session, usuario_id: int):
     return usuario
 
 def crear_usuario_para_docente(db: Session, datos: UsuarioCreate):
-    hashed = bcrypt.hash(datos.contrasena)
+    hashed = argon2.hash(datos.contrasena)
     nuevo = Usuario(
         correo=datos.correo,
         contrasena=hashed,
