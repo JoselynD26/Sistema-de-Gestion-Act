@@ -14,11 +14,44 @@ def get_db():
     finally:
         db.close()
 
+@router.post("/solicitar-codigo-admin/")
+def solicitar_codigo_admin(email: str, nombres: str):
+    """Envía código de verificación al email para crear cuenta admin"""
+    from app.services.email_service import email_service
+    
+    success = email_service.send_admin_verification_email(email, nombres)
+    if success:
+        return {"message": "Código de verificación enviado al email"}
+    else:
+        raise HTTPException(status_code=500, detail="Error al enviar email")
+
 @router.post("/registro-admin/")
-def registrar_admin(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    if usuario.rol != "admin":
-        raise HTTPException(status_code=400, detail="Solo se permite registrar admins desde aquí")
-    return crear_usuario(db, usuario)
+def registrar_admin(
+    correo: str,
+    contrasena: str, 
+    nombres: str,
+    apellidos: str,
+    codigo_verificacion: str,
+    db: Session = Depends(get_db)
+):
+    """Registra admin solo con código de verificación válido"""
+    from app.services.email_service import email_service
+    
+    # Verificar código
+    if not email_service.verify_code(correo, codigo_verificacion):
+        raise HTTPException(status_code=400, detail="Código de verificación inválido o expirado")
+    
+    # Crear usuario admin
+    from app.schemas.usuario import UsuarioCreate
+    usuario_data = UsuarioCreate(
+        correo=correo,
+        contrasena=contrasena,
+        nombres=nombres,
+        apellidos=apellidos,
+        rol="admin"
+    )
+    
+    return crear_usuario(db, usuario_data)
 
 @router.post("/login/")
 def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
@@ -26,7 +59,8 @@ def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     token = crear_token(usuario.id, usuario.rol)
-    return {
+    
+    response = {
         "access_token": token,
         "token_type": "bearer",
         "rol": usuario.rol,
@@ -34,3 +68,19 @@ def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
         "nombres": usuario.nombres,
         "apellidos": usuario.apellidos
     }
+    
+    # Si es docente, agregar el docente_id y obtener nombres del registro de docente
+    if usuario.rol == "docente" and usuario.id_docente:
+        response["docente_id"] = usuario.id_docente
+        
+        # Obtener nombres del registro de docente si el usuario no los tiene
+        if not usuario.nombres or not usuario.apellidos:
+            from app.models.docente import Docente
+            docente = db.query(Docente).filter(Docente.id == usuario.id_docente).first()
+            if docente:
+                response["nombres"] = docente.nombres
+                response["apellidos"] = docente.apellidos
+    
+    print(f"DEBUG LOGIN - Usuario: {response.get('nombres')} {response.get('apellidos')}, Rol: {usuario.rol}")
+    
+    return response

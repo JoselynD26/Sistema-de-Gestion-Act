@@ -10,7 +10,7 @@ from app.api import (
     docente_materia, docente_carrera, auth, docente_vinculacion,
     usuario, usuario_rol, rol, permiso, rol_permiso,
     notificacion, croquis, curso_vinculacion, panel_inicio,
-    sala   # ✅ módulo de Salas
+    sala, reserva_aulas, profesor_panel
 )
 
 app = FastAPI(
@@ -63,10 +63,10 @@ app.add_middleware(
 app.include_router(docente.router)
 app.include_router(aula.router)
 app.include_router(materia.router)
-app.include_router(reserva.router)
+app.include_router(reserva.router, prefix="/reservas", tags=["Reservas"])
 app.include_router(carrera.router)
 app.include_router(curso.router)
-app.include_router(horario.router)
+app.include_router(horario.router, prefix="/horarios", tags=["Horarios"])
 app.include_router(plaza.router)
 app.include_router(sede.router)
 app.include_router(sala_profesores.router)
@@ -98,3 +98,5 @@ app.include_router(docente_vinculacion.router)
 #   PUT /salas/{id}
 #   DELETE /salas/{id}
 app.include_router(sala.router, prefix="/salas", tags=["Salas"])
+app.include_router(reserva_aulas.router, prefix="/reserva-aulas", tags=["Reserva Aulas"])
+app.include_router(profesor_panel.router, prefix="/profesor", tags=["Panel Profesor"])

@@ -4,10 +4,13 @@ from app.schemas.sala import SalaCreate
 
 # Crear sala
 def crear_sala(db: Session, datos: SalaCreate):
+    print(f"[DEBUG] Creando sala con datos: {datos.dict()}")
     nueva = Sala(**datos.dict())
+    print(f"[DEBUG] Sala creada: nombre={nueva.nombre}, sede_id={nueva.sede_id}")
     db.add(nueva)
     db.commit()
     db.refresh(nueva)
+    print(f"[DEBUG] Sala guardada con ID: {nueva.id}")
     return {
         "id": nueva.id,
         "nombre": nueva.nombre,

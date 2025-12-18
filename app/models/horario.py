@@ -7,7 +7,8 @@ class Horario(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     fecha = Column(Date, nullable=False)
-    hora = Column(Time, nullable=False)
+    hora_inicio = Column(Time)
+    hora_fin = Column(Time)
     estado = Column(String, default="activo")
 
     id_docente = Column(Integer, ForeignKey("docente.id"))

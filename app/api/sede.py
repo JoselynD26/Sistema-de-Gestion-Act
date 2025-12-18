@@ -24,8 +24,8 @@ def modulos_por_sede(id_sede: int, db: Session = Depends(get_db)):
         {"titulo": "Cursos", "icono": "class"}, 
         {"titulo": "Materias", "icono": "book"},
         {"titulo": "Horarios", "icono": "schedule"}, 
-         {"titulo": "Salas", "icono": "business"},   # ✅ nuevo módulo
-
+        {"titulo": "Salas", "icono": "business"},
+        {"titulo": "Reservas", "icono": "pending_actions"},
     ]
 
 @router.post("/sedes/", response_model=SedeOut)
