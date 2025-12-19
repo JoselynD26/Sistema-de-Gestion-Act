@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from app.models.escritorio import Escritorio
 from app.schemas.escritorio import EscritorioCreate, EscritorioUpdate
-from app.models.sala import Sala
+from app.models.sala_profesores import SalaProfesores
 from app.models.sede import Sede
 from app.models.carrera import Carrera
 from app.models.docente import Docente
@@ -10,6 +10,22 @@ from app.models.docente import Docente
 #   CREAR ESCRITORIO
 # ======================================
 def crear_escritorio(db: Session, datos: EscritorioCreate):
+    # Verificar que la sala existe
+    sala = db.query(SalaProfesores).filter(SalaProfesores.id == datos.sala_id).first()
+    if not sala:
+        raise ValueError(f"La sala con ID {datos.sala_id} no existe")
+    
+    # Verificar que la carrera existe
+    carrera = db.query(Carrera).filter(Carrera.id == datos.carrera_id).first()
+    if not carrera:
+        raise ValueError(f"La carrera con ID {datos.carrera_id} no existe")
+    
+    # Verificar que el docente existe (si se proporciona)
+    if datos.docente_id:
+        docente = db.query(Docente).filter(Docente.id == datos.docente_id).first()
+        if not docente:
+            raise ValueError(f"El docente con ID {datos.docente_id} no existe")
+    
     nuevo = Escritorio(**datos.dict())
     db.add(nuevo)
     db.commit()
@@ -22,63 +38,72 @@ def crear_escritorio(db: Session, datos: EscritorioCreate):
 from sqlalchemy.orm import joinedload
 
 def listar_escritorios_por_sede(db: Session, id_sede: int):
-    escritorios = (
-        db.query(Escritorio)
-        .join(Sala, Escritorio.sala_id == Sala.id)
-        .filter(Sala.sede_id == id_sede)
-        .options(
-            joinedload(Escritorio.sala),
-            joinedload(Escritorio.carrera),
-            joinedload(Escritorio.docente),
+    try:
+        escritorios = (
+            db.query(Escritorio)
+            .join(SalaProfesores, Escritorio.sala_id == SalaProfesores.id)
+            .filter(SalaProfesores.sede_id == id_sede)
+            .all()
         )
-        .all()
-    )
 
-    resultado = []
-    for e in escritorios:
-        resultado.append({
-            "id": e.id,
-            "codigo": e.codigo,
-            "estado": e.estado,
-            "jornada": e.jornada,
-            "sala_id": e.sala_id,
-            "sala_nombre": e.sala.nombre if e.sala else None,
-            "carrera_id": e.carrera_id,
-            "carrera_nombre": e.carrera.nombre if e.carrera else None,
-            "docente_id": e.docente_id,
-            "docente_nombre": f"{e.docente.nombres} {e.docente.apellidos}" if e.docente else None,
-        })
-    return resultado
+        resultado = []
+        for e in escritorios:
+            # Obtener sala manualmente
+            sala = db.query(SalaProfesores).filter(SalaProfesores.id == e.sala_id).first()
+            # Obtener carrera manualmente
+            carrera = db.query(Carrera).filter(Carrera.id == e.carrera_id).first()
+            # Obtener docente manualmente
+            docente = db.query(Docente).filter(Docente.id == e.docente_id).first() if e.docente_id else None
+            
+            resultado.append({
+                "id": e.id,
+                "codigo": e.codigo,
+                "estado": e.estado,
+                "jornada": e.jornada,
+                "sala_id": e.sala_id,
+                "sala_nombre": sala.nombre if sala else None,
+                "carrera_id": e.carrera_id,
+                "carrera_nombre": carrera.nombre if carrera else None,
+                "docente_id": e.docente_id,
+                "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else None,
+            })
+        return resultado
+    except Exception as e:
+        print(f"Error en listar_escritorios_por_sede: {e}")
+        return []
 
 # ======================================
 #   LISTAR TODOS
 # ======================================
 def listar_escritorios(db: Session):
-    escritorios = (
-        db.query(Escritorio)
-        .options(
-            joinedload(Escritorio.sala),
-            joinedload(Escritorio.carrera),
-            joinedload(Escritorio.docente),
-        )
-        .all()
-    )
-
-    resultado = []
-    for e in escritorios:
-        resultado.append({
-            "id": e.id,
-            "codigo": e.codigo,
-            "estado": e.estado,
-            "jornada": e.jornada,
-            "sala_id": e.sala_id,
-            "sala_nombre": e.sala.nombre if e.sala else None,
-            "carrera_id": e.carrera_id,
-            "carrera_nombre": e.carrera.nombre if e.carrera else None,
-            "docente_id": e.docente_id,
-            "docente_nombre": f"{e.docente.nombres} {e.docente.apellidos}" if e.docente else None,
-        })
-    return resultado
+    try:
+        escritorios = db.query(Escritorio).all()
+        resultado = []
+        
+        for e in escritorios:
+            # Obtener sala manualmente
+            sala = db.query(SalaProfesores).filter(SalaProfesores.id == e.sala_id).first()
+            # Obtener carrera manualmente
+            carrera = db.query(Carrera).filter(Carrera.id == e.carrera_id).first()
+            # Obtener docente manualmente
+            docente = db.query(Docente).filter(Docente.id == e.docente_id).first() if e.docente_id else None
+            
+            resultado.append({
+                "id": e.id,
+                "codigo": e.codigo,
+                "estado": e.estado,
+                "jornada": e.jornada,
+                "sala_id": e.sala_id,
+                "sala_nombre": sala.nombre if sala else None,
+                "carrera_id": e.carrera_id,
+                "carrera_nombre": carrera.nombre if carrera else None,
+                "docente_id": e.docente_id,
+                "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else None,
+            })
+        return resultado
+    except Exception as e:
+        print(f"Error en listar_escritorios: {e}")
+        return []
 
 # ======================================
 #   FILTROS

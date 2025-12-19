@@ -16,3 +16,4 @@ class Sede(Base):
 
     # 👉 Relación directa con Sala (One-to-Many)
     salas = relationship("Sala", back_populates="sede")
+    plazas = relationship("Plaza", back_populates="sede")

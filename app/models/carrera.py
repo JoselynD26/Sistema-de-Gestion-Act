@@ -15,6 +15,7 @@ class Carrera(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
+    codigo = Column(String(50), nullable=False, default="AUTO")
 
     # Relaciones
     docentes = relationship("Docente", secondary="docente_carrera", back_populates="carreras")

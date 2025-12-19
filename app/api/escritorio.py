@@ -45,7 +45,11 @@ def escritorios_por_carrera(carrera_id: int, db: Session = Depends(get_db)):
 # 2️⃣ → CRUD general
 @router.post("/escritorios/", response_model=EscritorioOut)
 def crear_escritorio(data: EscritorioCreate, db: Session = Depends(get_db)):
-    return crud.crear_escritorio(db, data)
+    try:
+        return crud.crear_escritorio(db, data)
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/escritorios/", response_model=list[EscritorioOut])
 def listar_escritorios(db: Session = Depends(get_db)):

@@ -1,6 +1,16 @@
 from pydantic import BaseModel
+from typing import Optional
 
-class PlazaCreate(BaseModel):
+class PlazaBase(BaseModel):
     nombre: str
-    piso: str
-    id_aula: int
+    sede_id: int
+    croquis_url: Optional[str] = None
+
+class PlazaCreate(PlazaBase):
+    pass
+
+class PlazaOut(PlazaBase):
+    id: int
+
+    class Config:
+        from_attributes = True

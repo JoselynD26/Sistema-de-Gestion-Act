@@ -21,7 +21,7 @@ from app.models.rol import Rol
 from app.models.rol_permiso import RolPermiso
 from app.models.sala import Sala
 from app.models.sala_carrera import SalaCarrera
-from app.models.sala_profesores import SalaProfesores
+# from app.models.sala_profesores import SalaProfesores
 from app.models.sede import Sede
 from app.models.usuario import Usuario
 from app.models.usuario_rol import UsuarioRol

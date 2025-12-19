@@ -8,7 +8,7 @@ class Escritorio(Base):
     id = Column(Integer, primary_key=True, index=True)
     codigo = Column(String, unique=True, nullable=False)
 
-    sala_id = Column(Integer, ForeignKey("sala.id"), nullable=False)
+    sala_id = Column(Integer, ForeignKey("sala_profesores.id"), nullable=False)
     docente_id = Column(Integer, ForeignKey("docente.id"), nullable=True)
     carrera_id = Column(Integer, ForeignKey("carrera.id"), nullable=False)
 
@@ -24,7 +24,7 @@ class Escritorio(Base):
         nullable=False
     )
 
-    sala = relationship("Sala", back_populates="escritorios")
+    sala = relationship("SalaProfesores")
     docente = relationship("Docente", back_populates="escritorio", uselist=False)
     carrera = relationship("Carrera", back_populates="escritorios")
 

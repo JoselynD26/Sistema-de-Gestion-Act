@@ -4,7 +4,21 @@ from app.models.sede import Sede
 from app.schemas.carrera import CarreraCreate
 
 def crear_carrera(db: Session, datos: CarreraCreate):
-    nueva = Carrera(nombre=datos.nombre)
+    # Generar código único si es AUTO
+    codigo = datos.codigo
+    if codigo == "AUTO":
+        # Generar código basado en el nombre
+        base_codigo = datos.nombre[:3].upper()
+        contador = 1
+        while True:
+            codigo_generado = f"{base_codigo}{contador:03d}"
+            existe = db.query(Carrera).filter(Carrera.codigo == codigo_generado).first()
+            if not existe:
+                codigo = codigo_generado
+                break
+            contador += 1
+    
+    nueva = Carrera(nombre=datos.nombre, codigo=codigo)
     sedes = db.query(Sede).filter(Sede.id.in_(datos.sede_ids)).all()
     nueva.sedes = sedes
     db.add(nueva)
@@ -14,6 +28,7 @@ def crear_carrera(db: Session, datos: CarreraCreate):
     return {
         "id": nueva.id,
         "nombre": nueva.nombre,
+        "codigo": nueva.codigo,
         "sede_ids": [s.id for s in nueva.sedes]
     }
     
@@ -23,6 +38,7 @@ def listar_carreras(db: Session):
         {
             "id": c.id,
             "nombre": c.nombre,
+            "codigo": c.codigo,
             "sede_ids": [s.id for s in c.sedes]
         }
         for c in carreras

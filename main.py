@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.staticfiles import StaticFiles
 
 # Importación de rutas desde app/api
 from app.api import (
@@ -73,7 +74,7 @@ app.include_router(curso.router)
 app.include_router(horario.router, prefix="/horarios", tags=["Horarios"])
 app.include_router(plaza.router)
 app.include_router(sede.router)
-app.include_router(sala_profesores.router)
+app.include_router(sala_profesores.router, prefix="/sala-profesores", tags=["Sala Profesores"])
 app.include_router(escritorio.router)
 app.include_router(materia_carrera.router)
 app.include_router(sala_carrera.router)
@@ -104,3 +105,7 @@ app.include_router(docente_vinculacion.router)
 app.include_router(sala.router, prefix="/salas", tags=["Salas"])
 app.include_router(reserva_aulas.router, prefix="/reserva-aulas", tags=["Reserva Aulas"])
 app.include_router(profesor_panel.router, prefix="/profesor", tags=["Panel Profesor"])
+app.include_router(croquis.router, prefix="/croquis", tags=["Croquis"])
+
+# Servir archivos estáticos
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

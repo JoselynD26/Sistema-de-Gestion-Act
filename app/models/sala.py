@@ -14,5 +14,4 @@ class Sala(Base):
 
     # ✅ Relaciones
     carreras = relationship("Carrera", secondary=sala_carrera, back_populates="salas")
-    escritorios = relationship("Escritorio", back_populates="sala")
     sede = relationship("Sede", back_populates="salas")
