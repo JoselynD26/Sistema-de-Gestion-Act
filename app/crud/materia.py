@@ -1,64 +1,46 @@
 from sqlalchemy.orm import Session
 from app.models.materia import Materia
-from app.models.carrera import Carrera
 from app.models.sede import Sede
-from app.models.docente import Docente
 from app.schemas.materia import MateriaCreate
 
-def crear_materia(db: Session, datos: MateriaCreate):
-    nueva = Materia(nombre=datos.nombre)
-
-    if datos.carrera_ids:
-        carreras = db.query(Carrera).filter(Carrera.id.in_(datos.carrera_ids)).all()
-        nueva.carreras = carreras
-
-    if datos.sede_ids:
-        sedes = db.query(Sede).filter(Sede.id.in_(datos.sede_ids)).all()
-        nueva.sedes = sedes
-
-    if datos.docente_ids:
-        docentes = db.query(Docente).filter(Docente.id.in_(datos.docente_ids)).all()
-        nueva.docentes = docentes
-
-    db.add(nueva)
-    db.commit()
-    db.refresh(nueva)
-    return nueva
-
-def listar_materias_por_sede(db: Session, id_sede: int):
-    return (
-        db.query(Materia)
-        .join(Materia.sedes)
-        .filter(Sede.id == id_sede)
-        .all()
-    )
-    
-def listar_materias(db: Session):
+def get_materias(db: Session):
     return db.query(Materia).all()
 
-def obtener_materia(db: Session, materia_id: int):
+def get_materias_por_sede(db: Session, sede_id: int):
+    return db.query(Materia).join(Materia.sedes).filter(Sede.id == sede_id).all()
+
+def get_materia(db: Session, materia_id: int):
     return db.query(Materia).filter(Materia.id == materia_id).first()
 
-def actualizar_materia(db: Session, id_materia: int, materia_data: MateriaCreate):
-    materia = db.query(Materia).filter(Materia.id == id_materia).first()
-    if not materia:
-        return None
-
-    # Actualizar nombre
-    materia.nombre = materia_data.nombre
-
-    # Actualizar relaciones (si vienen vacías, se limpian)
-    materia.carreras = db.query(Carrera).filter(Carrera.id.in_(materia_data.carrera_ids)).all() if materia_data.carrera_ids else []
-    materia.sedes = db.query(Sede).filter(Sede.id.in_(materia_data.sede_ids)).all() if materia_data.sede_ids else []
-    materia.docentes = db.query(Docente).filter(Docente.id.in_(materia_data.docente_ids)).all() if materia_data.docente_ids else []
-
+def create_materia(db: Session, materia: MateriaCreate):
+    # Generar código si no se proporciona
+    codigo = materia.codigo or f"MAT{db.query(Materia).count() + 1:03d}"
+    
+    db_materia = Materia(nombre=materia.nombre, codigo=codigo)
+    
+    # Agregar relaciones con sedes si se proporcionan
+    if materia.sede_ids:
+        sedes = db.query(Sede).filter(Sede.id.in_(materia.sede_ids)).all()
+        db_materia.sedes = sedes
+    
+    db.add(db_materia)
     db.commit()
-    db.refresh(materia)
-    return materia
+    db.refresh(db_materia)
+    return db_materia
 
-def eliminar_materia(db: Session, materia_id: int):
-    materia = db.query(Materia).filter(Materia.id == materia_id).first()
-    if materia:
-        db.delete(materia)
+def update_materia(db: Session, materia_id: int, materia: MateriaCreate):
+    db_materia = db.query(Materia).filter(Materia.id == materia_id).first()
+    if db_materia:
+        for key, value in materia.dict().items():
+            setattr(db_materia, key, value)
         db.commit()
-    return materia
+        db.refresh(db_materia)
+    return db_materia
+
+def delete_materia(db: Session, materia_id: int):
+    db_materia = db.query(Materia).filter(Materia.id == materia_id).first()
+    if db_materia:
+        db.delete(db_materia)
+        db.commit()
+        return True
+    return False

@@ -1,11 +1,13 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Optional
 
 class CursoBase(BaseModel):
+    nombre: str
     nivel: str
     paralelo: str
-    jornada:  Literal["Matutina", "Vespertina", "Nocturna"] 
+    carrera_id: int
     id_sede: int
+    jornada: Optional[str] = None
 
 class CursoCreate(CursoBase):
     pass

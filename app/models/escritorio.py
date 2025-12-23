@@ -24,6 +24,7 @@ class Escritorio(Base):
         nullable=False
     )
 
+    # Relaciones
     sala = relationship("SalaProfesores")
     docente = relationship("Docente", back_populates="escritorio", uselist=False)
     carrera = relationship("Carrera", back_populates="escritorios")

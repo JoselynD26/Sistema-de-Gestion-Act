@@ -11,7 +11,7 @@ from app.api import (
     docente_materia, docente_carrera, auth, docente_vinculacion,
     usuario, usuario_rol, rol, permiso, rol_permiso,
     notificacion, croquis, curso_vinculacion, panel_inicio,
-    sala, reserva_aulas, profesor_panel
+    sala, reserva_aulas, profesor_panel, pdf_horarios
 )
 
 app = FastAPI(
@@ -67,7 +67,7 @@ def root():
 # -------------------
 app.include_router(docente.router)
 app.include_router(aula.router)
-app.include_router(materia.router)
+app.include_router(materia.router, prefix="/materias", tags=["Materias"])
 app.include_router(reserva.router, prefix="/reservas", tags=["Reservas"])
 app.include_router(carrera.router)
 app.include_router(curso.router)
@@ -106,6 +106,7 @@ app.include_router(sala.router, prefix="/salas", tags=["Salas"])
 app.include_router(reserva_aulas.router, prefix="/reserva-aulas", tags=["Reserva Aulas"])
 app.include_router(profesor_panel.router, prefix="/profesor", tags=["Panel Profesor"])
 app.include_router(croquis.router, prefix="/croquis", tags=["Croquis"])
+app.include_router(pdf_horarios.router, prefix="/pdf-horarios", tags=["PDF Horarios"])
 
 # Servir archivos estáticos
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

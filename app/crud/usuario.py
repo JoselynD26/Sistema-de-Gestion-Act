@@ -44,6 +44,8 @@ def eliminar_usuario(db: Session, usuario_id: int):
 def crear_usuario_para_docente(db: Session, datos: UsuarioCreate):
     hashed = hashlib.sha256(datos.contrasena.encode()).hexdigest()
     nuevo = Usuario(
+        nombres=datos.nombres,
+        apellidos=datos.apellidos,
         correo=datos.correo,
         contrasena=hashed,
         rol="docente",

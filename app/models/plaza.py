@@ -11,5 +11,5 @@ class Plaza(Base):
     croquis_url = Column(Text, nullable=True)
 
     # Relaciones
-    sede = relationship("Sede", back_populates="plazas")
-    salas = relationship("SalaProfesores", back_populates="plaza")
+    # sede = relationship("Sede", back_populates="plazas")
+    # salas = relationship("SalaProfesores", back_populates="plaza")

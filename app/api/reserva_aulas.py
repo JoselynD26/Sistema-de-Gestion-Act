@@ -198,13 +198,21 @@ def obtener_reservas_pendientes(db: Session = Depends(get_db)):
         aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
         docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
         
+        # Mostrar rango de horas
+        hora_display = "N/A"
+        if reserva.hora_inicio and reserva.hora_fin:
+            hora_display = f"{reserva.hora_inicio} - {reserva.hora_fin}"
+        elif reserva.hora_inicio:
+            hora_display = str(reserva.hora_inicio)
+        
         resultado.append({
             "id": reserva.id,
             "fecha": reserva.fecha,
-            "hora": reserva.hora,
+            "hora": hora_display,
             "aula_nombre": aula.nombre if aula else "N/A",
             "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else "N/A",
-            "estado": reserva.estado
+            "estado": reserva.estado,
+            "motivo": reserva.motivo or "Sin motivo especificado"
         })
     
     return resultado

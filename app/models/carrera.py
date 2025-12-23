@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 from app.core.config import Base
+from app.models.relaciones import docente_carrera
 
 # Tabla intermedia carrera_sede
 carrera_sede = Table(
@@ -18,9 +19,7 @@ class Carrera(Base):
     codigo = Column(String(50), nullable=False, default="AUTO")
 
     # Relaciones
-    docentes = relationship("Docente", secondary="docente_carrera", back_populates="carreras")
-    salas = relationship("Sala", secondary="sala_carrera", back_populates="carreras")
     sedes = relationship("Sede", secondary="carrera_sede", back_populates="carreras")
-    materias = relationship("Materia", secondary="carrera_materia", back_populates="carreras")
+    docentes = relationship("Docente", secondary=docente_carrera, back_populates="carreras")
     escritorios = relationship("Escritorio", back_populates="carrera")
 

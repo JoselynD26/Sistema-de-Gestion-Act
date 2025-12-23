@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from datetime import date
+import os
 from app.core.config import SessionLocal
+from supabase import create_client, Client
 from app.schemas.horario import HorarioCreate, HorarioOut
 from app.models.horario import Horario
 from app.crud import horario as crud
@@ -28,9 +31,9 @@ def listar_todos_horarios(db: Session = Depends(get_db)):
     return db.query(Horario).all()
 
 # ✅ Listar horarios por sede
-@router.get("/sede/{id_sede}")
-def listar_horarios_por_sede(id_sede: int, db: Session = Depends(get_db)):
-    horarios = db.query(Horario).filter(Horario.id_sede == id_sede).all()
+@router.get("/sede/{sede_id}")
+def listar_horarios_por_sede(sede_id: int, db: Session = Depends(get_db)):
+    horarios = db.query(Horario).filter(Horario.id_sede == sede_id).all()
     
     resultado = []
     for horario in horarios:
@@ -57,7 +60,61 @@ def listar_horarios_por_sede(id_sede: int, db: Session = Depends(get_db)):
 # ✅ Crear horario
 @router.post("/", response_model=HorarioOut)
 def crear_horario(datos: HorarioCreate, db: Session = Depends(get_db)):
-    return crud.crear_horario(db, datos)
+    # Para admin: crear horarios recurrentes sin validar asignación de materia
+    from datetime import datetime, timedelta
+    
+    # Obtener el día de la semana de la fecha inicial
+    fecha = datos.fecha if hasattr(datos, 'fecha') else datetime.now().date()
+    hora_inicio = datos.hora_inicio if hasattr(datos, 'hora_inicio') else datetime.strptime('08:00', '%H:%M').time()
+    hora_fin = datos.hora_fin if hasattr(datos, 'hora_fin') else datetime.strptime('10:00', '%H:%M').time()
+    
+    dia_semana = fecha.strftime("%A")
+    dias_es = {
+        "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles",
+        "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo"
+    }
+    dia_es = dias_es.get(dia_semana, dia_semana)
+    
+    # Crear horarios recurrentes para 16 semanas
+    horarios_creados = []
+    for i in range(16):
+        fecha_clase = fecha + timedelta(weeks=i)
+        
+        # Verificar disponibilidad del aula
+        conflicto = db.query(Horario).filter(
+            Horario.id_aula == datos.id_aula,
+            Horario.fecha == fecha_clase,
+            Horario.estado == "activo",
+            Horario.hora_inicio < hora_fin,
+            Horario.hora_fin > hora_inicio
+        ).first()
+        
+        if not conflicto:
+            nuevo_horario = Horario(
+                dia=dia_es,
+                fecha=fecha_clase,
+                hora_inicio=hora_inicio,
+                hora_fin=hora_fin,
+                estado="activo",
+                id_docente=datos.id_docente,
+                id_materia=datos.id_materia,
+                id_aula=datos.id_aula,
+                id_curso=4,  # Usar curso existente
+                id_sede=datos.id_sede
+            )
+            
+            db.add(nuevo_horario)
+            horarios_creados.append(nuevo_horario)
+    
+    db.commit()
+    
+    # Retornar el primer horario creado
+    if horarios_creados:
+        db.refresh(horarios_creados[0])
+        return horarios_creados[0]
+    else:
+        # Si no se pudo crear ninguno, usar el CRUD normal
+        return crud.crear_horario(db, datos)
 
 # ✅ Obtener horario por ID
 @router.get("/{horario_id}", response_model=HorarioOut)
@@ -100,3 +157,53 @@ def cancelar_horario(horario_id: int, db: Session = Depends(get_db)):
     db.refresh(horario)
     
     return {"message": "Horario cancelado exitosamente", "id": horario_id}
+
+# ✅ Subir PDF de horario
+@router.post("/pdf/{sede_id}")
+async def subir_pdf_horario(sede_id: int, file: UploadFile = File(...)):
+    if not file.filename.endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Solo se permiten archivos PDF")
+    
+    # Configurar Supabase
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_ANON_KEY')
+    supabase: Client = create_client(supabase_url, supabase_key)
+    
+    # Leer contenido del archivo
+    content = await file.read()
+    
+    # Subir a Supabase Storage
+    file_path = f"horario_sede_{sede_id}.pdf"
+    
+    try:
+        result = supabase.storage.from_("horarios-pdf").upload(file_path, content)
+        return {"message": "PDF subido exitosamente", "filename": file.filename}
+    except Exception as e:
+        # Si el archivo ya existe, actualizarlo
+        try:
+            result = supabase.storage.from_("horarios-pdf").update(file_path, content)
+            return {"message": "PDF actualizado exitosamente", "filename": file.filename}
+        except Exception as e2:
+            raise HTTPException(status_code=500, detail=f"Error al subir PDF: {str(e2)}")
+
+# ✅ Obtener PDF de horario
+@router.get("/pdf/{sede_id}")
+def obtener_pdf_horario(sede_id: int):
+    # Configurar Supabase
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_ANON_KEY')
+    supabase: Client = create_client(supabase_url, supabase_key)
+    
+    file_path = f"horario_sede_{sede_id}.pdf"
+    
+    try:
+        # Descargar archivo de Supabase Storage
+        result = supabase.storage.from_("horarios-pdf").download(file_path)
+        
+        return Response(
+            content=result,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=horario_sede_{sede_id}.pdf"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="PDF no encontrado")

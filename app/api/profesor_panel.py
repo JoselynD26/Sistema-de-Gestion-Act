@@ -46,6 +46,7 @@ def obtener_mi_horario(docente_id: int, db: Session = Depends(get_db)):
     for horario in horarios:
         materia = db.query(Materia).filter(Materia.id == horario.id_materia).first()
         aula = db.query(Aula).filter(Aula.id == horario.id_aula).first()
+        curso = db.query(Curso).filter(Curso.id == horario.id_curso).first() if horario.id_curso else None
         
         # Mostrar rango de horas si existen ambas, sino solo inicio
         hora_display = str(horario.hora_inicio) if horario.hora_inicio else "N/A"
@@ -54,12 +55,18 @@ def obtener_mi_horario(docente_id: int, db: Session = Depends(get_db)):
         
         resultado.append({
             "id": horario.id,
+            "dia": horario.dia,
             "fecha": horario.fecha,
+            "hora_inicio": str(horario.hora_inicio) if horario.hora_inicio else None,
+            "hora_fin": str(horario.hora_fin) if horario.hora_fin else None,
             "hora": hora_display,
             "estado": horario.estado,
             "materia_nombre": materia.nombre if materia else "N/A",
             "aula_nombre": aula.nombre if aula else "N/A",
-            "aula_capacidad": aula.capacidad if aula else 0
+            "aula_capacidad": aula.capacidad if aula else 0,
+            "curso_nombre": curso.nombre if curso else "N/A",
+            "curso_nivel": curso.nivel if curso else "N/A",
+            "curso_paralelo": curso.paralelo if curso else "N/A"
         })
     
     return resultado
@@ -72,9 +79,12 @@ def crear_horario_profesor(
     materia_id: int,
     aula_id: int,
     docente_id: int,
+    recurrente: bool = True,  # Por defecto crear horarios recurrentes
+    semanas: int = 16,  # Número de semanas a crear (un semestre)
     db: Session = Depends(get_db)
 ):
-    """Crear horario de clase"""
+    """Crear horario de clase (recurrente por defecto)"""
+    from datetime import timedelta
     
     # Verificar que el docente tenga asignada la materia
     docente = db.query(Docente).filter(Docente.id == docente_id).first()
@@ -85,38 +95,87 @@ def crear_horario_profesor(
     if not materia_asignada:
         raise HTTPException(status_code=400, detail="No tienes asignada esta materia")
     
-    # Verificar que el aula esté disponible en el rango de horas
-    conflicto = db.query(Horario).filter(
-        and_(
-            Horario.id_aula == aula_id,
-            Horario.fecha == fecha,
-            Horario.estado == "activo",
-            # Verificar solapamiento de horarios
-            Horario.hora_inicio < hora_fin,
-            Horario.hora_fin > hora_inicio
+    # Obtener el día de la semana de la fecha inicial
+    dia_semana = fecha.strftime("%A")
+    # Traducir al español
+    dias_es = {
+        "Monday": "Lunes", "Tuesday": "Martes", "Wednesday": "Miércoles",
+        "Thursday": "Jueves", "Friday": "Viernes", "Saturday": "Sábado", "Sunday": "Domingo"
+    }
+    dia_es = dias_es.get(dia_semana, dia_semana)
+    
+    horarios_creados = []
+    
+    if recurrente:
+        # Crear horarios para las próximas semanas
+        for i in range(semanas):
+            fecha_clase = fecha + timedelta(weeks=i)
+            
+            # Verificar que el aula esté disponible en cada fecha
+            conflicto = db.query(Horario).filter(
+                and_(
+                    Horario.id_aula == aula_id,
+                    Horario.fecha == fecha_clase,
+                    Horario.estado == "activo",
+                    Horario.hora_inicio < hora_fin,
+                    Horario.hora_fin > hora_inicio
+                )
+            ).first()
+            
+            if not conflicto:
+                nuevo_horario = Horario(
+                    dia=dia_es,
+                    fecha=fecha_clase,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    estado="activo",
+                    id_docente=docente_id,
+                    id_materia=materia_id,
+                    id_aula=aula_id,
+                    id_curso=None,  # Permitir curso nulo temporalmente
+                    id_sede=docente.sede_id
+                )
+                
+                db.add(nuevo_horario)
+                horarios_creados.append(fecha_clase.strftime("%Y-%m-%d"))
+    else:
+        # Crear solo un horario
+        conflicto = db.query(Horario).filter(
+            and_(
+                Horario.id_aula == aula_id,
+                Horario.fecha == fecha,
+                Horario.estado == "activo",
+                Horario.hora_inicio < hora_fin,
+                Horario.hora_fin > hora_inicio
+            )
+        ).first()
+        
+        if conflicto:
+            raise HTTPException(status_code=400, detail="Aula ocupada en ese horario")
+        
+        nuevo_horario = Horario(
+            dia=dia_es,
+            fecha=fecha,
+            hora_inicio=hora_inicio,
+            hora_fin=hora_fin,
+            estado="activo",
+            id_docente=docente_id,
+            id_materia=materia_id,
+            id_aula=aula_id,
+            id_curso=None,  # Permitir curso nulo temporalmente
+            id_sede=docente.sede_id
         )
-    ).first()
+        
+        db.add(nuevo_horario)
+        horarios_creados.append(fecha.strftime("%Y-%m-%d"))
     
-    if conflicto:
-        raise HTTPException(status_code=400, detail="Aula ocupada en ese horario")
-    
-    # Crear horario
-    nuevo_horario = Horario(
-        fecha=fecha,
-        hora_inicio=hora_inicio,
-        hora_fin=hora_fin,
-        estado="activo",
-        id_docente=docente_id,
-        id_materia=materia_id,
-        id_aula=aula_id,
-        id_sede=docente.sede_id
-    )
-    
-    db.add(nuevo_horario)
     db.commit()
-    db.refresh(nuevo_horario)
     
-    return {"message": "Horario creado exitosamente", "id": nuevo_horario.id}
+    return {
+        "message": f"Horario{'s' if len(horarios_creados) > 1 else ''} creado{'s' if len(horarios_creados) > 1 else ''} exitosamente",
+        "fechas_creadas": horarios_creados,
+        "total": len(horarios_creados)
+    }
 
 @router.put("/actualizar-horario/{horario_id}")
 def actualizar_horario_profesor(

@@ -11,9 +11,5 @@ class Sede(Base):
 
     # ✅ Relaciones
     carreras = relationship("Carrera", secondary="carrera_sede", back_populates="sedes")
-    docentes = relationship("Docente", back_populates="sede")
     materias = relationship("Materia", secondary="sede_materia", back_populates="sedes")
-
-    # 👉 Relación directa con Sala (One-to-Many)
-    salas = relationship("Sala", back_populates="sede")
-    plazas = relationship("Plaza", back_populates="sede")
+    docentes = relationship("Docente", back_populates="sede")
