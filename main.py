@@ -11,7 +11,7 @@ from app.api import (
     docente_materia, docente_carrera, auth, docente_vinculacion,
     usuario, usuario_rol, rol, permiso, rol_permiso,
     notificacion, croquis, curso_vinculacion, panel_inicio,
-    sala, reserva_aulas, profesor_panel, pdf_horarios
+    sala, reserva_aulas, profesor_panel, pdf_horarios, horario_docente
 )
 
 app = FastAPI(
@@ -93,6 +93,9 @@ app.include_router(croquis.router)
 app.include_router(curso_vinculacion.router)
 app.include_router(panel_inicio.router)
 app.include_router(docente_vinculacion.router)
+app.include_router(escritorio.router, prefix="/escritorios", tags=["Escritorios"])
+app.include_router(horario_docente.router)
+
 
 # ✅ Router de Salas
 # Como en app/api/sala.py ya definiste las rutas sin prefijo (/ , /sede/{id}, /{id}),
@@ -107,6 +110,8 @@ app.include_router(reserva_aulas.router, prefix="/reserva-aulas", tags=["Reserva
 app.include_router(profesor_panel.router, prefix="/profesor", tags=["Panel Profesor"])
 app.include_router(croquis.router, prefix="/croquis", tags=["Croquis"])
 app.include_router(pdf_horarios.router, prefix="/pdf-horarios", tags=["PDF Horarios"])
+app.include_router(horario.router, prefix="/horarios", tags=["Horarios"])
+
 
 # Servir archivos estáticos
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")

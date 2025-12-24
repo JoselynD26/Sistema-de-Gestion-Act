@@ -132,6 +132,15 @@ async def obtener_croquis_aula(aula_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Aula no encontrada")
     
     return {"croquis_url": aula.croquis_url}
+@router.get("/sala/sede/{sede_id}")
+def listar_salas_por_sede(sede_id: int, db: Session = Depends(get_db)):
+    from app.models.sala_profesores import SalaProfesores
+
+    salas = db.query(SalaProfesores)\
+        .filter(SalaProfesores.id_sede == sede_id)\
+        .all()
+
+    return salas
 
 @router.get("/sala/{sala_id}/croquis")
 async def obtener_croquis_sala(sala_id: int, db: Session = Depends(get_db)):

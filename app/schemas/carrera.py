@@ -1,9 +1,9 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 class CarreraBase(BaseModel):
     nombre: str
-    codigo: str = "AUTO"  # Valor por defecto
+    codigo: Optional[str] = None
 
 class CarreraCreate(CarreraBase):
     sede_ids: List[int]  # ✅ lista de sedes asociadas

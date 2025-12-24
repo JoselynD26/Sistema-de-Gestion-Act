@@ -11,3 +11,4 @@ passlib[argon2]
 python-jose[cryptography]
 python-multipart
 supabase
+supabase-py

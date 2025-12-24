@@ -27,3 +27,4 @@ def eliminar_docente_sala(id: int, db: Session = Depends(get_db)):
     if relacion:
         return {"mensaje": "Relación eliminada correctamente"}
     return {"mensaje": "Relación no encontrada"}
+

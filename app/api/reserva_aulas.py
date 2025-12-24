@@ -242,3 +242,31 @@ def rechazar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Reserva rechazada exitosamente"}
+@router.get("/profesor/mi-croquis/{docente_id}")
+def obtener_mi_croquis(docente_id: int, db: Session = Depends(get_db)):
+    from app.models.escritorio import Escritorio
+    from app.models.sala_profesores import SalaProfesores
+
+    escritorio = (
+        db.query(Escritorio)
+        .filter(Escritorio.docente_id == docente_id)
+        .first()
+    )
+
+    if not escritorio:
+        return {"croquis_url": None}
+
+    sala = (
+        db.query(SalaProfesores)
+        .filter(SalaProfesores.id == escritorio.sala_id)
+        .first()
+    )
+
+    if not sala:
+        return {"croquis_url": None}
+
+    return {
+        "escritorio": escritorio.codigo,
+        "sala": sala.nombre,
+        "croquis_url": sala.croquis_url
+    }
