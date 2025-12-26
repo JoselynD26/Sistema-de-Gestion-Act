@@ -29,7 +29,6 @@ class DocenteSimple(BaseModel):
 
 class MateriaCreate(BaseModel):
     nombre: str
-    codigo: Optional[str] = None
     carrera_ids: Optional[List[int]] = []
     sede_ids: Optional[List[int]] = []
     docente_ids: Optional[List[int]] = []
@@ -38,7 +37,6 @@ class MateriaCreate(BaseModel):
 class MateriaOut(BaseModel):
     id: int
     nombre: str
-    codigo: str
 
     carreras: List[CarreraSimple] = []
     sedes: List[SedeSimple] = []

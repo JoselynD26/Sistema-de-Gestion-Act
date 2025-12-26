@@ -16,7 +16,6 @@ class Materia(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
-    codigo = Column(String(20), nullable=False)
 
     sedes = relationship(
         "Sede",

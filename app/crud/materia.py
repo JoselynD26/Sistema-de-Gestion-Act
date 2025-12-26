@@ -28,12 +28,9 @@ def get_materia(db: Session, materia_id: int):
 
 
 def create_materia(db: Session, materia: MateriaCreate):
-    # Generar código automático si no viene
-    codigo = materia.codigo or f"MAT{db.query(Materia).count() + 1:03d}"
 
     db_materia = Materia(
         nombre=materia.nombre,
-        codigo=codigo,
     )
 
     # Relaciones
@@ -73,8 +70,6 @@ def update_materia(db: Session, materia_id: int, materia: MateriaCreate):
     if materia.nombre is not None:
         db_materia.nombre = materia.nombre
 
-    if materia.codigo is not None:
-        db_materia.codigo = materia.codigo
 
     # 🔹 CARRERAS (🔥 AQUÍ ESTABA EL PROBLEMA)
     if materia.carrera_ids is not None:
