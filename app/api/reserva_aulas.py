@@ -8,6 +8,7 @@ from app.models.aula import Aula
 from app.models.horario import Horario
 from app.models.docente import Docente
 from app.models.sede import Sede
+from app.schemas.reserva import CancelarReservaSchema
 
 router = APIRouter()
 
@@ -166,26 +167,35 @@ def obtener_mis_reservas(docente_id: int, db: Session = Depends(get_db)):
     return resultado
 
 @router.post("/cancelar-reserva/{reserva_id}")
-def cancelar_reserva(reserva_id: int, docente_id: int, db: Session = Depends(get_db)):
-    """Cancelar reserva propia"""
-    
+def cancelar_reserva(
+    reserva_id: int,
+    data: CancelarReservaSchema,
+    db: Session = Depends(get_db)
+):
     reserva = db.query(Reserva).filter(
         and_(
             Reserva.id == reserva_id,
-            Reserva.id_docente == docente_id
+            Reserva.id_docente == data.docente_id
         )
     ).first()
-    
+
     if not reserva:
-        raise HTTPException(status_code=404, detail="Reserva no encontrada")
-    
+        raise HTTPException(
+            status_code=404,
+            detail="Reserva no encontrada"
+        )
+
     if reserva.estado == "aprobada":
-        raise HTTPException(status_code=400, detail="No se puede cancelar una reserva aprobada")
-    
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede cancelar una reserva aprobada"
+        )
+
     reserva.estado = "cancelada"
     db.commit()
-    
+
     return {"message": "Reserva cancelada exitosamente"}
+
 
 @router.get("/reservas-pendientes")
 def obtener_reservas_pendientes(db: Session = Depends(get_db)):

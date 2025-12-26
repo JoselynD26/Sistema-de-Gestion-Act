@@ -26,7 +26,8 @@ def modulos_por_sede(id_sede: int, db: Session = Depends(get_db)):
         {"titulo": "Horarios", "icono": "schedule"}, 
         {"titulo": "Salas", "icono": "business"},
         {"titulo": "Reservas", "icono": "pending_actions"},
-        {"titulo": "Croquis", "icono": "map"},
+        {"titulo": "Croquis por Sala", "icono": "map"},
+        {"titulo": "Croquis Institucionales", "icono": "map"},
         {"titulo": "PDFHorarios", "icono": "picture_as_pdf"},
     ]
     print(f"DEBUG - Módulos para sede {id_sede}: {modulos}")

@@ -22,3 +22,19 @@ def actualizar_croquis_plaza(db: Session, plaza_id: int, croquis_url: str):
         db.commit()
         db.refresh(plaza)
     return plaza
+def eliminar_plaza(db: Session, plaza_id: int):
+    plaza = db.query(Plaza).filter(Plaza.id == plaza_id).first()
+    if not plaza:
+        return None
+    db.delete(plaza)
+    db.commit()
+    return plaza
+def actualizar_plaza(db: Session, plaza_id: int, datos: PlazaCreate):
+    plaza = db.query(Plaza).filter(Plaza.id == plaza_id).first()
+    if not plaza:
+        return None
+    for key, value in datos.dict().items():
+        setattr(plaza, key, value)
+    db.commit()
+    db.refresh(plaza)
+    return plaza

@@ -16,14 +16,19 @@ def get_db():
 
 @router.post("/solicitar-codigo-admin/")
 def solicitar_codigo_admin(email: str, nombres: str):
-    """Envía código de verificación al email para crear cuenta admin"""
     from app.services.email_service import email_service
-    
-    success = email_service.send_admin_verification_email(email, nombres)
-    if success:
-        return {"message": "Código de verificación enviado al email"}
-    else:
-        raise HTTPException(status_code=500, detail="Error al enviar email")
+
+    try:
+        success = email_service.send_admin_verification_email(email, nombres)
+        if success:
+            return {"message": "Código de verificación enviado al email"}
+        else:
+            raise HTTPException(status_code=500, detail="Error al enviar email")
+
+    except Exception as e:
+        print("ERROR solicitar_codigo_admin:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/registro-admin/")
 def registrar_admin(

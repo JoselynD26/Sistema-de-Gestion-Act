@@ -15,3 +15,12 @@ class ReservaOut(ReservaCreate):
 
     class Config:
         from_attributes = True
+
+class ReservaUpdateEstado(BaseModel):
+    estado: str     
+    
+class  ReservaCancel(BaseModel):
+    reserva_id: int
+    docente_id: int
+class CancelarReservaSchema(BaseModel):
+    docente_id: int

@@ -28,3 +28,10 @@ sede_sala = Table(
     Column("sede_id", Integer, ForeignKey("sede.id"), primary_key=True),
     Column("sala_id", Integer, ForeignKey("sala.id"), primary_key=True),
 )                                   
+
+carrera_materia = Table(
+    "carrera_materia",
+    Base.metadata,
+    Column("carrera_id", ForeignKey("carrera.id"), primary_key=True),
+    Column("materia_id", ForeignKey("materia.id"), primary_key=True),
+)

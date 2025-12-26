@@ -22,4 +22,8 @@ class Carrera(Base):
     sedes = relationship("Sede", secondary="carrera_sede", back_populates="carreras")
     docentes = relationship("Docente", secondary=docente_carrera, back_populates="carreras")
     escritorios = relationship("Escritorio", back_populates="carrera")
-
+    materias = relationship(
+        "Materia",
+        secondary="carrera_materia",
+        back_populates="carreras",
+    )

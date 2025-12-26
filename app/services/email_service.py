@@ -92,7 +92,7 @@ class EmailService:
                         </div>
                         
                         <div style="padding: 30px; background: #f9f9f9;">
-                            <h2 style="color: #1E3A8A;">Hola {admin.nombres},</h2>
+                            <h2 style="color: #1E3A8A;">Hola {admin.nombres} te damos la bienvenida al Sistema de Gestión Académica Yavirac,</h2>
                             
                             <p><strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado crear una cuenta de <strong>Administrador</strong> en el sistema.</p>
                             
