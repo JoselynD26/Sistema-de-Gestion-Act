@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.core.config import SessionLocal
-from app.schemas.docente import DocenteCreate, DocenteOut
+from app.schemas.docente import DocenteCreate, DocenteOut, DocenteUpdate
 from app.crud import docente as crud
 
 router = APIRouter()
@@ -30,7 +30,9 @@ def obtener_docente(id_docente: int, db: Session = Depends(get_db)):
     return crud.obtener_docente(db, id_docente)
 
 @router.put("/docentes/{id_docente}", response_model=DocenteOut)
-def actualizar_docente(id_docente: int, docente: DocenteCreate, db: Session = Depends(get_db)):
+@router.patch("/docentes/{id_docente}", response_model=DocenteOut)
+def actualizar_docente(id_docente: int, docente: DocenteUpdate, db: Session = Depends(get_db)):
+    # Nota: Permitimos PUT parcial para compatibilidad con frontend actual
     docente_actualizado = crud.actualizar_docente(db, id_docente, docente)
     if docente_actualizado is None:
         return {"mensaje": "Docente no encontrado"}

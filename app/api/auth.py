@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.schemas.usuario import UsuarioCreate, UsuarioLogin
+from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
 from app.crud.usuario import crear_usuario, autenticar_usuario
 from app.core.config import SessionLocal
-from app.core.seguridad import crear_token
-
+from app.core.seguridad import crear_token, obtener_usuario_actual
+from app.models.usuario import Usuario
 router = APIRouter()
 
 def get_db():
@@ -57,6 +57,23 @@ def registrar_admin(
     )
     
     return crear_usuario(db, usuario_data)
+
+@router.put("/cambiar-contrasena/")
+def cambiar_contrasena(
+    datos: UsuarioChangePassword,
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(get_db)
+):
+    import hashlib
+    # Verificar contraseña actual
+    if hashlib.sha256(datos.contrasena_actual.encode()).hexdigest() != usuario_actual.contrasena:
+        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+    
+    # Actualizar contraseña
+    usuario_actual.contrasena = hashlib.sha256(datos.nueva_contrasena.encode()).hexdigest()
+    db.commit()
+    
+    return {"message": "Contraseña actualizada exitosamente"}
 
 @router.post("/login/")
 def login(datos: UsuarioLogin, db: Session = Depends(get_db)):

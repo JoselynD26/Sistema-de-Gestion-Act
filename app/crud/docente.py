@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.docente import Docente
-from app.schemas.docente import DocenteCreate
+from app.schemas.docente import DocenteCreate, DocenteUpdate
 
 
 def crear_docente(db: Session, datos: DocenteCreate):
@@ -48,7 +48,7 @@ def obtener_docente(db: Session, docente_id: int):
     return db.query(Docente).filter(Docente.id == docente_id).first()
 
 
-def actualizar_docente(db: Session, id_docente: int, docente_data: DocenteCreate):
+def actualizar_docente(db: Session, id_docente: int, docente_data: DocenteUpdate):
     """
     Actualiza los datos de un docente
     """

@@ -1,7 +1,8 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.config import SessionLocal
-from app.schemas.usuario import UsuarioCreate, UsuarioOut
+from app.schemas.usuario import UsuarioCreate, UsuarioOut, UsuarioResetPassword, UsuarioUpdate
 from app.crud.usuario import (
     crear_usuario,
     autenticar_usuario,
@@ -9,7 +10,8 @@ from app.crud.usuario import (
     obtener_usuario,
     eliminar_usuario,
     crear_usuario_para_docente,
-    docentes_sin_usuario
+    docentes_sin_usuario,
+    actualizar_usuario
 )
 from app.dependencies.roles import verificar_rol, obtener_usuario_actual
 from app.models.usuario import Usuario
@@ -36,7 +38,7 @@ def login(correo: str, contrasena: str, db: Session = Depends(get_db)):
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     
-    token = crear_token(usuario.id_usuario)
+    token = crear_token(usuario.id, usuario.rol)
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -69,14 +71,72 @@ def crear_para_docente(data: UsuarioCreate, db: Session = Depends(get_db)):
 def listar_docentes_sin_usuario(db: Session = Depends(get_db)):
     return docentes_sin_usuario(db)
 
-# Editar perfil (solo docente)
-@router.put("/usuarios/editar/", response_model=UsuarioOut, dependencies=[Depends(verificar_rol("docente"))])
-def editar_mi_perfil(data: UsuarioCreate, db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
-    actual = db.query(Usuario).get(usuario.id_usuario)
-    if not actual:
+# Actualizar usuario (Universal: Admin a cualquiera, Docente a sí mismo)
+@router.put("/usuarios/{usuario_id}", response_model=UsuarioOut)
+@router.patch("/usuarios/{usuario_id}", response_model=UsuarioOut)
+def update_usuario_universal(
+    usuario_id: int,
+    data: UsuarioUpdate,
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+):
+    # Lógica de permisos similar al reset
+    usuario_objetivo = None
+
+    if usuario_actual.rol == "admin":
+        usuario_objetivo = db.query(Usuario).get(usuario_id)
+    else:
+        # El usuario normal solo puede editarse a sí mismo (por ID usuario o ID docente)
+        if usuario_id == usuario_actual.id or (usuario_actual.id_docente and usuario_id == usuario_actual.id_docente):
+            usuario_objetivo = usuario_actual
+        else:
+            raise HTTPException(status_code=403, detail="No tienes permisos para editar este perfil")
+
+    if not usuario_objetivo:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Realizar la actualización
     for campo, valor in data.dict(exclude_unset=True).items():
-        setattr(actual, campo, valor)
+        # Seguridad: Solo admin puede cambiar roles o id_docente de otros
+        if usuario_actual.rol != "admin" and campo in ["rol", "id_docente"]:
+            continue
+        setattr(usuario_objetivo, campo, valor)
+    
     db.commit()
-    db.refresh(actual)
-    return actual
+    db.refresh(usuario_objetivo)
+    return usuario_objetivo
+
+# Ruta antigua para compatibilidad frontend (si la usan sin ID)
+@router.put("/usuarios/editar/", response_model=UsuarioOut)
+def editar_mi_perfil_compat(
+    data: UsuarioUpdate, 
+    db: Session = Depends(get_db), 
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+):
+    return update_usuario_universal(usuario_actual.id, data, db, usuario_actual)
+
+# Resetear contraseña (admin o el mismo usuario)
+@router.put("/usuarios/reset/{usuario_id}")
+def reset_contrasena(
+    usuario_id: int, 
+    data: UsuarioResetPassword, 
+    db: Session = Depends(get_db),
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+):
+    usuario_objetivo = None
+    if usuario_actual.rol == "admin":
+        usuario_objetivo = db.query(Usuario).get(usuario_id)
+    else:
+        if usuario_id == usuario_actual.id or (usuario_actual.id_docente and usuario_id == usuario_actual.id_docente):
+            usuario_objetivo = usuario_actual
+        else:
+            raise HTTPException(status_code=403, detail="No tienes permisos para resetear esta contraseña")
+
+    if not usuario_objetivo:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    import hashlib
+    usuario_objetivo.contrasena = hashlib.sha256(data.nueva_contrasena.encode()).hexdigest()
+    db.commit()
+    return {"message": "Contraseña reseteada exitosamente"}
+

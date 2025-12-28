@@ -25,4 +25,5 @@ from app.models.sala_carrera import SalaCarrera
 from app.models.sede import Sede
 from app.models.usuario import Usuario
 from app.models.usuario_rol import UsuarioRol
+from app.models.horario_docente import HorarioDocente
  

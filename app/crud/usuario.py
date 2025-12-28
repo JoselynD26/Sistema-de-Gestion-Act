@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from app.models.usuario import Usuario
-from app.schemas.usuario import UsuarioCreate
+from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from app.models.usuario_rol import UsuarioRol
 from app.schemas.usuario_rol import UsuarioRolCreate
 import hashlib
@@ -71,3 +72,13 @@ def asignar_rol(db: Session, data: UsuarioRolCreate):
 
 def roles_por_usuario(db: Session, usuario_id: int):
     return db.query(UsuarioRol).filter_by(id_usuario=usuario_id).all()
+
+def actualizar_usuario(db: Session, usuario_id: int, datos: UsuarioUpdate):
+    usuario = db.query(Usuario).get(usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    for campo, valor in datos.dict(exclude_unset=True).items():
+        setattr(usuario, campo, valor)
+    db.commit()
+    db.refresh(usuario)
+    return usuario

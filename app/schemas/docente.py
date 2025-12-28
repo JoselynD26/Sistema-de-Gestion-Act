@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from enum import Enum
+from typing import Optional
 
 class Regimen(str, Enum):
     LOES = "LOES"
@@ -20,6 +21,15 @@ class DocenteBase(BaseModel):
 
 class DocenteCreate(DocenteBase):
     pass
+
+class DocenteUpdate(BaseModel):
+    cedula: Optional[str] = None
+    correo: Optional[EmailStr] = None
+    apellidos: Optional[str] = None
+    nombres: Optional[str] = None
+    regimen: Optional[Regimen] = None
+    observacion: Optional[Observacion] = None
+    sede_id: Optional[int] = None
 
 class DocenteOut(DocenteBase):
     id: int
