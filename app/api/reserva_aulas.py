@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, desc
 from datetime import datetime
 from app.core.config import SessionLocal
 from app.models.reserva import Reserva
@@ -252,6 +253,38 @@ def rechazar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     db.commit()
     
     return {"message": "Reserva rechazada exitosamente"}
+
+@router.get("/historial")
+def obtener_historial(db: Session = Depends(get_db)):
+    """
+    Retorna todo el historial de reservas (incluyendo rechazadas/canceladas)
+    ordenadas por fecha descendente.
+    """
+    reservas = db.query(Reserva).order_by(Reserva.fecha.desc(), Reserva.hora_inicio.desc()).all()
+    
+    resultado = []
+    for reserva in reservas:
+        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
+        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
+        
+        # Mostrar rango de horas
+        hora_display = "N/A"
+        if reserva.hora_inicio and reserva.hora_fin:
+            hora_display = f"{reserva.hora_inicio} - {reserva.hora_fin}"
+        elif reserva.hora_inicio:
+            hora_display = str(reserva.hora_inicio)
+        
+        resultado.append({
+            "id": reserva.id,
+            "fecha": reserva.fecha,
+            "hora": hora_display,
+            "aula_nombre": aula.nombre if aula else "N/A",
+            "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else "N/A",
+            "estado": reserva.estado,
+            "motivo": reserva.motivo or "Sin motivo especificado"
+        })
+    
+    return resultado
 @router.get("/profesor/mi-croquis/{docente_id}")
 def obtener_mi_croquis(docente_id: int, db: Session = Depends(get_db)):
     from app.models.escritorio import Escritorio
@@ -280,3 +313,24 @@ def obtener_mi_croquis(docente_id: int, db: Session = Depends(get_db)):
         "sala": sala.nombre,
         "croquis_url": sala.croquis_url
     }
+
+@router.delete("/{reserva_id}")
+def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
+    """
+    Elimina una reserva de la base de datos.
+    Standard REST DELETE.
+    """
+    reserva = db.query(Reserva).filter(Reserva.id == reserva_id).first()
+    
+    if not reserva:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+    
+    # Opcional: Validar si se puede eliminar según reglas de negocio
+    # Por ejemplo, si es una reserva pasada o si ya fue aprobada
+    # if reserva.estado == 'aprobada':
+    #     raise HTTPException(status_code=400, detail="No se puede eliminar una reserva aprobada")
+
+    db.delete(reserva)
+    db.commit()
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

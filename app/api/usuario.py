@@ -135,8 +135,8 @@ def reset_contrasena(
     if not usuario_objetivo:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    import hashlib
-    usuario_objetivo.contrasena = hashlib.sha256(data.nueva_contrasena.encode()).hexdigest()
+    from app.core.seguridad import obtener_hash_contrasena
+    usuario_objetivo.contrasena = obtener_hash_contrasena(data.nueva_contrasena)
     db.commit()
     return {"message": "Contraseña reseteada exitosamente"}
 

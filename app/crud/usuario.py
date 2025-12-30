@@ -4,12 +4,10 @@ from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 from app.models.usuario_rol import UsuarioRol
 from app.schemas.usuario_rol import UsuarioRolCreate
-import hashlib
-#from passlib.hash import bcrypt
-#from passlib.hash import argon2
+from app.core.seguridad import obtener_hash_contrasena, verificar_contrasena
 
 def crear_usuario(db: Session, datos: UsuarioCreate):
-    hashed = hashlib.sha256(datos.contrasena.encode()).hexdigest()
+    hashed = obtener_hash_contrasena(datos.contrasena)
     nuevo = Usuario(
         nombres=datos.nombres,
         apellidos=datos.apellidos,
@@ -25,7 +23,7 @@ def crear_usuario(db: Session, datos: UsuarioCreate):
 
 def autenticar_usuario(db: Session, correo: str, contrasena: str):
     usuario = db.query(Usuario).filter_by(correo=correo).first()
-    if not usuario or hashlib.sha256(contrasena.encode()).hexdigest() != usuario.contrasena:
+    if not usuario or not verificar_contrasena(contrasena, usuario.contrasena):
         return None
     return usuario
 
@@ -43,7 +41,7 @@ def eliminar_usuario(db: Session, usuario_id: int):
     return usuario
 
 def crear_usuario_para_docente(db: Session, datos: UsuarioCreate):
-    hashed = hashlib.sha256(datos.contrasena.encode()).hexdigest()
+    hashed = obtener_hash_contrasena(datos.contrasena)
     nuevo = Usuario(
         nombres=datos.nombres,
         apellidos=datos.apellidos,

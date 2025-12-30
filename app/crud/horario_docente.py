@@ -32,10 +32,17 @@ def actualizar_horario_docente(db: Session, horario_id: int, data):
         return None
     
     # Si viene como objeto Pydantic, convertir a dict
-    update_data = data.dict(exclude_unset=True) if hasattr(data, "dict") else data
+    if hasattr(data, "dict"):
+        update_data = data.dict(exclude_unset=True)
+    elif isinstance(data, dict):
+        update_data = data
+    else:
+        # Fallback básico si es otro tipo de objeto
+        update_data = {k: v for k, v in data.__dict__.items() if v is not None}
     
     for key, value in update_data.items():
-        setattr(horario, key, value)
+        if hasattr(horario, key):
+             setattr(horario, key, value)
     
     db.commit()
     db.refresh(horario)

@@ -64,13 +64,13 @@ def cambiar_contrasena(
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
-    import hashlib
+    from app.core.seguridad import obtener_hash_contrasena, verificar_contrasena
     # Verificar contraseña actual
-    if hashlib.sha256(datos.contrasena_actual.encode()).hexdigest() != usuario_actual.contrasena:
+    if not verificar_contrasena(datos.contrasena_actual, usuario_actual.contrasena):
         raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
     
     # Actualizar contraseña
-    usuario_actual.contrasena = hashlib.sha256(datos.nueva_contrasena.encode()).hexdigest()
+    usuario_actual.contrasena = obtener_hash_contrasena(datos.nueva_contrasena)
     db.commit()
     
     return {"message": "Contraseña actualizada exitosamente"}

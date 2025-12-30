@@ -1,7 +1,7 @@
 
 import requests
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8001"
 
 def verificar_fix_alias():
     print("--- Verificando Fix: Reset usando ID Docente como Alias ---")
@@ -11,6 +11,7 @@ def verificar_fix_alias():
     import hashlib
 
     db = SessionLocal()
+    from app.core.seguridad import obtener_hash_contrasena
     
     # Usuario de prueba con ID Usuario != ID Docente
     # Para esto, necesitamos crear un escenario donde ID Usuario sea ej. 100 y ID Docente sea 50.
@@ -34,7 +35,7 @@ def verificar_fix_alias():
         # 1. Crear usuario normal
         u = Usuario(
             nombres="Alias", apellidos="Test", correo=user_email,
-            contrasena=hashlib.sha256(pass_base.encode()).hexdigest(),
+            contrasena=obtener_hash_contrasena(pass_base),
             rol="docente",
             id_docente=99999 # Fake ID docente (asumimos que no valida FK estricta o creamos docente si falla)
         )
@@ -77,12 +78,14 @@ def verificar_fix_alias():
         print("\n2. Verificando login con nueva contraseña...")
         resp_login = requests.post(f"{BASE_URL}/login/", json={"correo": user_email, "contrasena": pass_reset_alias})
         if resp_login.status_code != 200:
-             resp_login = requests.post(f"{BASE_URL}/api/auth/login/", json={"correo": user_email, "contrasena": pass_reset_alias})
+             print(f"Login failed on new password. Status: {resp_login.status_code}")
+             print(f"Response: {resp_login.text}")
              
         if resp_login.status_code == 200:
             print("✅ ÉXITO TOTAL: La contraseña se actualizó correctamente.")
         else:
-            print("❌ FALLO: No se puede loguear con la nueva contraseña.")
+            print(f"❌ FALLO: No se puede loguear con la nueva contraseña. Status: {resp_login.status_code}")
+            print(f"Response: {resp_login.text}")
 
     except Exception as e:
         print(f"EXCEPCIÓN: {e}")

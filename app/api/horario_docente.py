@@ -33,17 +33,15 @@ def crear_horario(
             detail="Hora inicio debe ser menor a hora fin"
         )
 
-    # Validar existencia de las entidades relacionadas
-    if not db.query(Docente).filter(Docente.id == data.docente_id).first():
-        raise HTTPException(status_code=404, detail=f"Docente con ID {data.docente_id} no encontrado")
-    if not db.query(Curso).filter(Curso.id == data.curso_id).first():
-        raise HTTPException(status_code=404, detail=f"Curso con ID {data.curso_id} no encontrado")
-    if not db.query(Materia).filter(Materia.id == data.materia_id).first():
-        raise HTTPException(status_code=404, detail=f"Materia con ID {data.materia_id} no encontrado")
-    if not db.query(Aula).filter(Aula.id == data.aula_id).first():
-        raise HTTPException(status_code=404, detail=f"Aula con ID {data.aula_id} no encontrado")
-
-    return crud.crear_horario_docente(db, data)
+    from sqlalchemy.exc import IntegrityError
+    try:
+        return crud.crear_horario_docente(db, data)
+    except IntegrityError as e:
+        db.rollback()
+        # Parseando el error para dar un mensaje útil de qué FK falló es complejo,
+        # pero para optimización general, retornar 400 o 404 genérico es mucho más rápido.
+        # Si se desea detalle, se puede inspeccionar e.orig.pgcode o similar.
+        raise HTTPException(status_code=400, detail="Error de integridad: Docente, Curso, Materia o Aula no válidos.")
 
 # 🔹 DOCENTE VE SU HORARIO
 @router.get("/docente/{docente_id}", response_model=list[HorarioDocenteOut])

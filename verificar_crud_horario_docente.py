@@ -2,10 +2,28 @@ import requests
 import json
 from datetime import time
 
-BASE_URL = "http://127.0.0.1:8000/horario-docente"
+BASE_URL = "http://127.0.0.1:8001/horario-docente"
 
 def test_crud_horario_docente():
     print("--- Probando CRUD Horario Docente ---")
+
+    # 0. Prueba de Error de Integridad (Optimización)
+    print("\n0. Probando creación con IDs inválidos (debería dar 400)...")
+    payload_invalid = {
+        "docente_id": 999999,
+        "curso_id": 999999,
+        "materia_id": 1,
+        "aula_id": 1,
+        "dia": "Lunes",
+        "hora_inicio": "08:00:00",
+        "hora_fin": "10:00:00"
+    }
+    resp_inv = requests.post(f"{BASE_URL}/", json=payload_invalid)
+    if resp_inv.status_code == 400:
+        print("✅ Correcto: Se recibió 400 Bad Request por integridad referencial (Optimizado).")
+    else:
+        print(f"⚠️ Advertencia: Se esperaba 400, se recibió {resp_inv.status_code}. Msg: {resp_inv.text}")
+
     
     # 1. Crear un horario (POST)
     payload = {

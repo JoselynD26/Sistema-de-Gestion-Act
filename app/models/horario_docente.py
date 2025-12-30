@@ -6,10 +6,10 @@ class HorarioDocente(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    docente_id = Column(Integer, ForeignKey("docente.id"), nullable=False)
-    curso_id = Column(Integer, ForeignKey("curso.id"), nullable=False)
-    materia_id = Column(Integer, ForeignKey("materia.id"), nullable=False)
-    aula_id = Column(Integer, ForeignKey("aula.id"), nullable=False)
+    docente_id = Column(Integer, ForeignKey("docente.id"), nullable=False, index=True)
+    curso_id = Column(Integer, ForeignKey("curso.id"), nullable=False, index=True)
+    materia_id = Column(Integer, ForeignKey("materia.id"), nullable=False, index=True)
+    aula_id = Column(Integer, ForeignKey("aula.id"), nullable=False, index=True)
 
     dia = Column(String, nullable=False)  # Lunes, Martes, etc
     hora_inicio = Column(Time, nullable=False)
