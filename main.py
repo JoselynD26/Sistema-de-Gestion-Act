@@ -25,40 +25,12 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://sistemagestionyavirac.netlify.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:61833",
-        "http://localhost:62527",
     ],
+    allow_origin_regex=r"http://localhost:\d+",  # Permite cualquier puerto en localhost
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# =========================
-# 🔥 CORS FORZADO (SOLUCIÓN CLAVE)
-# =========================
-@app.middleware("http")
-async def force_cors_headers(request, call_next):
-    response = await call_next(request)
-
-    origin = request.headers.get("origin")
-    allowed_origins = [
-        "https://sistemagestionyavirac.netlify.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:61833",
-        "http://localhost:62527",
-    ]
-
-    if origin in allowed_origins:
-        response.headers["Access-Control-Allow-Origin"] = origin
-
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-
-    return response
 
 # =========================
 # ROOT

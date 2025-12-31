@@ -140,32 +140,38 @@ def crear_reserva(request: dict, db: Session = Depends(get_db)):
 
 @router.get("/mis-reservas/{docente_id}")
 def obtener_mis_reservas(docente_id: int, db: Session = Depends(get_db)):
-    """Obtiene reservas del docente"""
+    """Obtiene reservas del docente (Optimizado)"""
     
-    reservas = db.query(Reserva).filter(Reserva.id_docente == docente_id).all()
+    # Consulta con JOIN para traer datos del Aula en una sola query
+    resultados = (
+        db.query(Reserva, Aula)
+        .join(Aula, Reserva.id_aula == Aula.id)
+        .filter(Reserva.id_docente == docente_id)
+        .order_by(Reserva.fecha.desc(), Reserva.hora_inicio.desc())
+        .all()
+    )
     
-    resultado = []
-    for reserva in reservas:
-        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
-        
-        # Mostrar rango de horas
+    lista_reservas = []
+    
+    for reserva, aula in resultados:
+        # Formato de hora
         hora_display = "N/A"
         if reserva.hora_inicio and reserva.hora_fin:
-            hora_display = f"{reserva.hora_inicio} - {reserva.hora_fin}"
+            hora_display = f"{reserva.hora_inicio.strftime('%H:%M')} - {reserva.hora_fin.strftime('%H:%M')}"
         elif reserva.hora_inicio:
             hora_display = str(reserva.hora_inicio)
         
-        resultado.append({
+        lista_reservas.append({
             "id": reserva.id,
             "fecha": reserva.fecha,
             "hora": hora_display,
             "estado": reserva.estado,
-            "aula_nombre": aula.nombre if aula else "N/A",
-            "aula_capacidad": aula.capacidad if aula else 0,
+            "aula_nombre": aula.nombre,
+            "aula_capacidad": aula.capacidad,
             "motivo": reserva.motivo or "Sin motivo especificado"
         })
     
-    return resultado
+    return lista_reservas
 
 @router.post("/cancelar-reserva/{reserva_id}")
 def cancelar_reserva(
@@ -200,33 +206,37 @@ def cancelar_reserva(
 
 @router.get("/reservas-pendientes")
 def obtener_reservas_pendientes(db: Session = Depends(get_db)):
-    """Obtiene todas las reservas pendientes (para admin)"""
+    """Obtiene todas las reservas pendientes (Optimizado)"""
     
-    reservas = db.query(Reserva).filter(Reserva.estado == "pendiente").all()
+    resultados = (
+        db.query(Reserva, Aula, Docente)
+        .join(Aula, Reserva.id_aula == Aula.id)
+        .join(Docente, Reserva.id_docente == Docente.id)
+        .filter(Reserva.estado == "pendiente")
+        .order_by(Reserva.fecha.asc())
+        .all()
+    )
     
-    resultado = []
-    for reserva in reservas:
-        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
-        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
-        
-        # Mostrar rango de horas
+    lista_reservas = []
+    for reserva, aula, docente in resultados:
+        # Formato de hora
         hora_display = "N/A"
         if reserva.hora_inicio and reserva.hora_fin:
-            hora_display = f"{reserva.hora_inicio} - {reserva.hora_fin}"
+            hora_display = f"{reserva.hora_inicio.strftime('%H:%M')} - {reserva.hora_fin.strftime('%H:%M')}"
         elif reserva.hora_inicio:
             hora_display = str(reserva.hora_inicio)
         
-        resultado.append({
+        lista_reservas.append({
             "id": reserva.id,
             "fecha": reserva.fecha,
             "hora": hora_display,
-            "aula_nombre": aula.nombre if aula else "N/A",
-            "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else "N/A",
+            "aula_nombre": aula.nombre,
+            "docente_nombre": f"{docente.nombres} {docente.apellidos}",
             "estado": reserva.estado,
             "motivo": reserva.motivo or "Sin motivo especificado"
         })
     
-    return resultado
+    return lista_reservas
 
 @router.post("/aprobar-reserva/{reserva_id}")
 def aprobar_reserva(reserva_id: int, db: Session = Depends(get_db)):
@@ -257,34 +267,36 @@ def rechazar_reserva(reserva_id: int, db: Session = Depends(get_db)):
 @router.get("/historial")
 def obtener_historial(db: Session = Depends(get_db)):
     """
-    Retorna todo el historial de reservas (incluyendo rechazadas/canceladas)
-    ordenadas por fecha descendente.
+    Retorna todo el historial de reservas (Optimizado y ordenado)
     """
-    reservas = db.query(Reserva).order_by(Reserva.fecha.desc(), Reserva.hora_inicio.desc()).all()
+    resultados = (
+        db.query(Reserva, Aula, Docente)
+        .join(Aula, Reserva.id_aula == Aula.id)
+        .join(Docente, Reserva.id_docente == Docente.id)
+        .order_by(Reserva.fecha.desc(), Reserva.hora_inicio.desc())
+        .all()
+    )
     
-    resultado = []
-    for reserva in reservas:
-        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
-        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
-        
-        # Mostrar rango de horas
+    lista_reservas = []
+    for reserva, aula, docente in resultados:
+        # Formato de hora
         hora_display = "N/A"
         if reserva.hora_inicio and reserva.hora_fin:
-            hora_display = f"{reserva.hora_inicio} - {reserva.hora_fin}"
+            hora_display = f"{reserva.hora_inicio.strftime('%H:%M')} - {reserva.hora_fin.strftime('%H:%M')}"
         elif reserva.hora_inicio:
             hora_display = str(reserva.hora_inicio)
         
-        resultado.append({
+        lista_reservas.append({
             "id": reserva.id,
             "fecha": reserva.fecha,
             "hora": hora_display,
-            "aula_nombre": aula.nombre if aula else "N/A",
-            "docente_nombre": f"{docente.nombres} {docente.apellidos}" if docente else "N/A",
+            "aula_nombre": aula.nombre,
+            "docente_nombre": f"{docente.nombres} {docente.apellidos}",
             "estado": reserva.estado,
             "motivo": reserva.motivo or "Sin motivo especificado"
         })
     
-    return resultado
+    return lista_reservas
 @router.get("/profesor/mi-croquis/{docente_id}")
 def obtener_mi_croquis(docente_id: int, db: Session = Depends(get_db)):
     from app.models.escritorio import Escritorio
