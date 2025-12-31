@@ -19,22 +19,50 @@ app = FastAPI(
 )
 
 # =========================
-# 🔥 CORS DEFINITIVO
+# 🔥 CORS GLOBAL (BASE)
 # =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://sistemagestionyavirac.netlify.app",
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:61833",
         "http://localhost:62527",
-        "https://sistemagestionyavirac.netlify.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# =========================
+# 🔥 CORS FORZADO (SOLUCIÓN CLAVE)
+# =========================
+@app.middleware("http")
+async def force_cors_headers(request, call_next):
+    response = await call_next(request)
+
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "https://sistemagestionyavirac.netlify.app",
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:61833",
+        "http://localhost:62527",
+    ]
+
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "*"
+
+    return response
+
+# =========================
+# ROOT
+# =========================
 @app.get("/")
 def root():
     return {"status": "ok", "message": "API funcionando"}
@@ -62,4 +90,7 @@ app.include_router(pdf_horarios.router, prefix="/pdf-horarios")
 app.include_router(croquis.router, prefix="/croquis")
 app.include_router(sala.router, prefix="/salas")
 
+# =========================
+# STATIC FILES
+# =========================
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
