@@ -5,14 +5,14 @@ from app.crud.curso import *
 from app.crud.curso_aula import *
 from app.crud.curso_horario import *
 from app.crud.docente import *
-from app.crud.docente_carrera import *
-from app.crud.docente_materia import *
+# from app.crud.docente_carrera import * # Eliminado
+# from app.crud.docente_materia import * # Eliminado
 from app.crud.docente_sala import *
 from app.crud.docente_vinculacion import *
 from app.crud.escritorio import *
 from app.crud.horario import *
 from app.crud.materia import *
-from app.crud.materia_carrera import *
+# from app.crud.materia_carrera import * # Eliminado
 from app.crud.notificacion import *
 from app.crud.permiso import *
 from app.crud.plaza import *
@@ -20,7 +20,7 @@ from app.crud.reserva import *
 from app.crud.rol import *
 from app.crud.rol_permiso import *
 from app.crud.sala import *
-from app.crud.sala_carrera import *
+# from app.crud.sala_carrera import * # Eliminado
 from app.crud.sala_profesores import *
 from app.crud.sede import *
 from app.crud.usuario import *

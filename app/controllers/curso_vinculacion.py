@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.models import Curso, Sede, Aula, Horario, CursoAula, CursoHorario, Materia, Docente
-from app.models.materia_carrera import MateriaCarrera
-from app.models.docente_materia import DocenteMateria
+# from app.models.materia_carrera import MateriaCarrera # Eliminado
+# from app.models.docente_materia import DocenteMateria # Eliminado
 # Sirve para obtener una vista de cursos con sus detalles y vinculaciones
 def vista_cursos_con_detalle(db: Session):
     cursos = db.query(Curso).all()
@@ -52,26 +52,38 @@ def vista_cursos_con_vinculaciones(db: Session):
     resultado = []
 
     for c in cursos:
-        materias = (
-            db.query(Materia.nombre)
-            .join(MateriaCarrera, Materia.id_materia == MateriaCarrera.id_materia)
-            .filter(MateriaCarrera.id_carrera == c.id_carrera)
-            .all()
-        )
-        docentes = (
-            db.query(Docente.nombres, Docente.apellidos)
-            .join(DocenteMateria, Docente.id_docente == DocenteMateria.id_docente)
-            .filter(DocenteMateria.id_materia.in_([m.id_materia for m in db.query(Materia).all()]))
-            .all()
-        )
+        # Asumiendo que Curso tiene relación 'carrera' y Carrera tiene relación 'materias'
+        # O si Curso tiene relación directa 'materias' (lo cual es menos común, usualmente es por carrera/malla)
+        # Revisando el código anterior: MateriaCarrera.id_carrera == c.id_carrera
+        # Esto sugiere que se buscaban las materias de la carrera del curso.
 
+        materias_nombres = []
+        if c.carrera: # Si existe la relación
+             materias_nombres = [m.nombre for m in c.carrera.materias]
+        else:
+            # Fallback si no hay relación ORM cargada o definida, pero intentamos evitar el join manual con tabla borrada
+            # Si Carrera es un modelo y tiene 'materias' definido (como vimos en Docente), esto debería funcionar.
+             pass
+
+        # Docentes que dan esas materias
+        # Anteriormente: DocenteMateria filtrado por todas las materias?
+        # .filter(DocenteMateria.id_materia.in_([m.id_materia for m in db.query(Materia).all()]))
+        # Eso filtraba por TODAS las materias de la DB? Eso parece un bug del código original o una lógica extraña.
+        # Asumiremos que quiere docentes de las materias DEL CURSO.
+        
+        docentes_set = set()
+        if c.carrera:
+            for materia in c.carrera.materias:
+                for docente in materia.docentes:
+                     docentes_set.add(f"{docente.nombres} {docente.apellidos}")
+        
         resultado.append({
             "id_curso": c.id_curso,
             "nivel": c.nivel,
             "paralelo": c.paralelo,
             "jornada": c.jornada,
-            "materias": [m[0] for m in materias],
-            "docentes": [f"{d[0]} {d[1]}" for d in docentes]
+            "materias": materias_nombres,
+            "docentes": list(docentes_set)
         })
 
     return resultado

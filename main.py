@@ -7,8 +7,10 @@ from fastapi.staticfiles import StaticFiles
 from app.api import (
     docente, aula, materia, reserva,
     carrera, curso, horario, plaza, sede, sala_profesores, escritorio,
-    materia_carrera, sala_carrera, curso_aula, curso_horario,
-    docente_materia, docente_carrera, auth, docente_vinculacion,
+    # materia_carrera, sala_carrera, # Eliminado
+    curso_aula, curso_horario,
+    # docente_materia, docente_carrera, # Eliminado
+    auth, docente_vinculacion,
     usuario, usuario_rol, rol, permiso, rol_permiso,
     notificacion, croquis, curso_vinculacion, panel_inicio,
     sala, reserva_aulas, profesor_panel, pdf_horarios, horario_docente
@@ -76,12 +78,12 @@ app.include_router(plaza.router)
 app.include_router(sede.router)
 app.include_router(sala_profesores.router, prefix="/sala-profesores", tags=["Sala Profesores"])
 app.include_router(escritorio.router)
-app.include_router(materia_carrera.router)
-app.include_router(sala_carrera.router)
+# app.include_router(materia_carrera.router) # Eliminado
+# app.include_router(sala_carrera.router)    # Eliminado
 app.include_router(curso_aula.router)
 app.include_router(curso_horario.router)
-app.include_router(docente_materia.router)
-app.include_router(docente_carrera.router)
+# app.include_router(docente_materia.router) # Eliminado
+# app.include_router(docente_carrera.router) # Eliminado
 app.include_router(auth.router)
 app.include_router(usuario.router)
 app.include_router(usuario_rol.router)

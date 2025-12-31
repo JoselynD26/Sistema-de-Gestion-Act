@@ -11,6 +11,8 @@ def crear_reserva_controller(db: Session, datos: ReservaCreate):
 def listar_reservas_controller(db: Session):
     return listar_reservas(db)
 
+from app.models.usuario import Usuario
+
 def aprobar_reserva_controller(db: Session, reserva_id: int):
     reserva = obtener_reserva(db, reserva_id)
     if not reserva:
@@ -18,7 +20,12 @@ def aprobar_reserva_controller(db: Session, reserva_id: int):
     reserva.estado = "aprobada"
     db.commit()
     db.refresh(reserva)
-    notificar_reserva(db, reserva.id_usuario, "aprobada")
+    
+    # Buscar el usuario asociado al docente de la reserva
+    usuario = db.query(Usuario).filter(Usuario.id_docente == reserva.id_docente).first()
+    if usuario:
+        notificar_reserva(db, usuario.id, "aprobada")
+        
     return reserva
 
 def cancelar_reserva_controller(db: Session, reserva_id: int):
@@ -28,7 +35,12 @@ def cancelar_reserva_controller(db: Session, reserva_id: int):
     reserva.estado = "cancelada"
     db.commit()
     db.refresh(reserva)
-    notificar_reserva(db, reserva.id_usuario, "cancelada")
+    
+    # Buscar el usuario asociado al docente de la reserva
+    usuario = db.query(Usuario).filter(Usuario.id_docente == reserva.id_docente).first()
+    if usuario:
+        notificar_reserva(db, usuario.id, "cancelada")
+
     return reserva
 
 def notificar_reserva(db: Session, usuario_id: int, estado: str):

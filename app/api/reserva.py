@@ -39,4 +39,6 @@ def cancelar(reserva_id: int, db: Session = Depends(get_db)):
 
 @router.get("/reservas/mis/", response_model=list[ReservaOut], dependencies=[Depends(verificar_rol("docente"))])
 def mis_reservas(db: Session = Depends(get_db), usuario: Usuario = Depends(obtener_usuario_actual)):
-    return db.query(Reserva).filter_by(id_usuario=usuario.id_usuario).all()
+    if not usuario.id_docente:
+        raise HTTPException(status_code=400, detail="El usuario no tiene un docente asociado")
+    return db.query(Reserva).filter_by(id_docente=usuario.id_docente).all()

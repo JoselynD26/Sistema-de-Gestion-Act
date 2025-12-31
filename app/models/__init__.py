@@ -5,14 +5,14 @@ from app.models.curso import Curso
 from app.models.curso_aula import CursoAula
 from app.models.curso_horario import CursoHorario
 from app.models.docente import Docente
-from app.models.docente_carrera import DocenteCarrera
-from app.models.docente_materia import DocenteMateria
+# from app.models.docente_carrera import DocenteCarrera  # Eliminado
+# from app.models.docente_materia import DocenteMateria  # Eliminado
 from app.models.docente_sala import DocenteSala
 from app.models.docente_vinculacion import DocenteVinculacion
 from app.models.escritorio import Escritorio
 from app.models.horario import Horario
 from app.models.materia import Materia
-from app.models.materia_carrera import MateriaCarrera
+# from app.models.materia_carrera import MateriaCarrera # Eliminado
 from app.models.notificacion import Notificacion
 from app.models.permiso import Permiso
 from app.models.plaza import Plaza
@@ -21,7 +21,7 @@ from app.models.rol import Rol
 from app.models.rol_permiso import RolPermiso
 from app.models.sala import Sala
 from app.models.sala_profesores import SalaProfesores
-from app.models.sala_carrera import SalaCarrera
+# from app.models.sala_carrera import SalaCarrera        # Eliminado
 from app.models.sede import Sede
 from app.models.usuario import Usuario
 from app.models.usuario_rol import UsuarioRol

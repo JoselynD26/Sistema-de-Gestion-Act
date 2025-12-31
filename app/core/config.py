@@ -20,7 +20,12 @@ if not DATABASE_URL:
 # Crear motor y sesión
 # -------------------
 try:
-    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    engine = create_engine(
+        DATABASE_URL,
+        pool_pre_ping=True,
+        pool_size=20,
+        max_overflow=30
+    )
     print("✅ Motor de base de datos creado exitosamente")
 except Exception as e:
     print(f"❌ ERROR al crear motor de base de datos: {e}")

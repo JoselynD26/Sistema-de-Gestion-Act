@@ -26,6 +26,15 @@ def listar_por_docente(db: Session, docente_id: int):
         .all()
 
 
+def listar_por_sede(db: Session, sede_id: int):
+    from app.models.docente import Docente
+    return db.query(HorarioDocente)\
+        .join(Docente, HorarioDocente.docente_id == Docente.id)\
+        .filter(Docente.sede_id == sede_id)\
+        .order_by(Docente.apellidos, HorarioDocente.dia, HorarioDocente.hora_inicio)\
+        .all()
+
+
 def actualizar_horario_docente(db: Session, horario_id: int, data):
     horario = db.query(HorarioDocente).filter(HorarioDocente.id == horario_id).first()
     if not horario:

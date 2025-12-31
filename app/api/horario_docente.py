@@ -22,6 +22,11 @@ def get_db():
         db.close()
 
 # 🔹 ADMIN CREA HORARIO
+@router.get("/", response_model=list[HorarioDocenteOut])
+def listar_todos(db: Session = Depends(get_db)):
+    from app.models.horario_docente import HorarioDocente
+    return db.query(HorarioDocente).all()
+
 @router.post("/", response_model=HorarioDocenteOut)
 def crear_horario(
     data: HorarioDocenteCreate,
@@ -50,6 +55,15 @@ def obtener_horario_docente(
     db: Session = Depends(get_db)
 ):
     return crud.listar_por_docente(db, docente_id)
+
+
+# 🔹 OBTENER TODOS LOS HORARIOS DE UNA SEDE (OPTIMIZACIÓN)
+@router.get("/sede/{sede_id}", response_model=list[HorarioDocenteOut])
+def obtener_horario_sede(
+    sede_id: int,
+    db: Session = Depends(get_db)
+):
+    return crud.listar_por_sede(db, sede_id)
 
 
 @router.patch("/{horario_id}", response_model=HorarioDocenteOut)
