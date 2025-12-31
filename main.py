@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
-# Importación de rutas desde app/api
 from app.api import (
     docente, aula, materia, reserva,
     carrera, curso, horario, plaza, sede, sala_profesores, escritorio,
@@ -20,15 +18,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# -------------------
-# CORS (OBLIGATORIO para Flutter Web + Netlify)
-# -------------------
+# =========================
+# 🔥 CORS DEFINITIVO
+# =========================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
         "http://localhost:61833",
         "http://localhost:62527",
-        "http://localhost:3000",
         "https://sistemagestionyavirac.netlify.app",
     ],
     allow_credentials=True,
@@ -36,84 +35,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# -------------------
-# Seguridad global para Swagger (JWT)
-# -------------------
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-
-    openapi_schema = get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-    )
-
-    openapi_schema["components"]["securitySchemes"] = {
-        "BearerAuth": {
-            "type": "http",
-            "scheme": "bearer",
-            "bearerFormat": "JWT"
-        }
-    }
-
-    for path in openapi_schema["paths"].values():
-        for method in path.values():
-            method.setdefault("security", [{"BearerAuth": []}])
-
-    app.openapi_schema = openapi_schema
-    return app.openapi_schema
-
-app.openapi = custom_openapi
-
-# -------------------
-# Endpoint raíz
-# -------------------
 @app.get("/")
 def root():
     return {"status": "ok", "message": "API funcionando"}
 
-# -------------------
-# Rutas principales
-# -------------------
-app.include_router(docente.router)
-app.include_router(aula.router)
-app.include_router(materia.router, prefix="/materias", tags=["Materias"])
-app.include_router(reserva.router, prefix="/reservas", tags=["Reservas"])
-app.include_router(carrera.router)
-app.include_router(curso.router)
-app.include_router(horario.router, prefix="/horarios", tags=["Horarios"])
-app.include_router(plaza.router)
-app.include_router(sede.router)
-app.include_router(sala_profesores.router, prefix="/sala-profesores", tags=["Sala Profesores"])
-app.include_router(escritorio.router)
-app.include_router(curso_aula.router)
-app.include_router(curso_horario.router)
+# =========================
+# RUTAS
+# =========================
 app.include_router(auth.router)
 app.include_router(usuario.router)
-app.include_router(usuario_rol.router)
-app.include_router(rol.router)
-app.include_router(permiso.router)
-app.include_router(rol_permiso.router)
-app.include_router(notificacion.router)
-app.include_router(croquis.router)
-app.include_router(curso_vinculacion.router)
-app.include_router(panel_inicio.router)
-app.include_router(docente_vinculacion.router)
-app.include_router(escritorio.router, prefix="/escritorios", tags=["Escritorios"])
+app.include_router(docente.router)
+app.include_router(aula.router)
+app.include_router(materia.router, prefix="/materias")
+app.include_router(reserva.router, prefix="/reservas")
+app.include_router(carrera.router)
+app.include_router(curso.router)
+app.include_router(horario.router, prefix="/horarios")
+app.include_router(plaza.router)
+app.include_router(sede.router)
+app.include_router(sala_profesores.router, prefix="/sala-profesores")
+app.include_router(escritorio.router, prefix="/escritorios")
 app.include_router(horario_docente.router)
+app.include_router(reserva_aulas.router, prefix="/reserva-aulas")
+app.include_router(profesor_panel.router, prefix="/profesor")
+app.include_router(pdf_horarios.router, prefix="/pdf-horarios")
+app.include_router(croquis.router, prefix="/croquis")
+app.include_router(sala.router, prefix="/salas")
 
-# -------------------
-# Rutas adicionales
-# -------------------
-app.include_router(sala.router, prefix="/salas", tags=["Salas"])
-app.include_router(reserva_aulas.router, prefix="/reserva-aulas", tags=["Reserva Aulas"])
-app.include_router(profesor_panel.router, prefix="/profesor", tags=["Panel Profesor"])
-app.include_router(croquis.router, prefix="/croquis", tags=["Croquis"])
-app.include_router(pdf_horarios.router, prefix="/pdf-horarios", tags=["PDF Horarios"])
-
-# -------------------
-# Archivos estáticos
-# -------------------
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
