@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import os
+from pydantic import EmailStr
 
 # -------------------
 # Cargar variables de entorno (solo para local)
@@ -12,6 +13,17 @@ load_dotenv()
 # URL de conexión (Render o local)
 # -------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
+
+# -------------------
+# Configuración SMTP (FastAPI-Mail)
+# -------------------
+MAIL_USERNAME = os.getenv("SMTP_USERNAME")
+MAIL_PASSWORD = os.getenv("SMTP_PASSWORD")
+MAIL_FROM = os.getenv("SMTP_FROM_EMAIL")
+MAIL_PORT = int(os.getenv("SMTP_PORT", 587))
+MAIL_SERVER = os.getenv("SMTP_SERVER")
+MAIL_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Sistema Yavirac")
+ADMIN_EMAIL = os.getenv("SMTP_FROM_EMAIL") # Por defecto usamos el mismo del remitente o uno específico
 
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL no está configurada")

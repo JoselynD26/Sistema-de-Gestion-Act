@@ -140,6 +140,15 @@ def eliminar_horario(horario_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Horario no encontrado")
     return {"msg": f"Horario {horario_id} eliminado"}
 
+# ✅ Registrar excepción (cancelación) para horario recurrente
+from app.schemas.horario_cancelado import HorarioCanceladoCreate, HorarioCancelado
+from app.crud import horario_cancelado as crud_cancelado
+
+@router.post("/cancelados/", response_model=dict)
+def registrar_cancelacion(datos: HorarioCanceladoCreate, db: Session = Depends(get_db)):
+    nuevo = crud_cancelado.create_horario_cancelado(db, datos)
+    return {"mensaje": "Cancelación registrada exitosamente", "id": nuevo.id}
+
 # ✅ Listar cancelados por sede y fecha
 @router.get("/cancelados/", response_model=list[HorarioOut])
 def ver_horarios_cancelados(sede_id: int, fecha: date, db: Session = Depends(get_db)):

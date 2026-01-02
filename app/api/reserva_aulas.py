@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
@@ -10,6 +10,7 @@ from app.models.horario import Horario
 from app.models.docente import Docente
 from app.models.sede import Sede
 from app.schemas.reserva import CancelarReservaSchema
+from app.utils.email import send_admin_notification, send_status_update_email, send_cancellation_notification
 
 router = APIRouter()
 
@@ -77,7 +78,7 @@ def obtener_aulas_disponibles(
     return aulas_disponibles
 
 @router.post("/crear-reserva")
-def crear_reserva(request: dict, db: Session = Depends(get_db)):
+def crear_reserva(request: dict, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Crear nueva reserva (estado pendiente)"""
     
     # Extraer datos del request
@@ -136,6 +137,24 @@ def crear_reserva(request: dict, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(nueva_reserva)
     
+    # Notificar al administrador (Background Task)
+    try:
+        docente = db.query(Docente).filter(Docente.id == docente_id).first()
+        docente_nombre = f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido"
+        aula = db.query(Aula).filter(Aula.id == aula_id).first()
+        aula_nombre = aula.nombre if aula else "Desconocido"
+        
+        background_tasks.add_task(
+            send_admin_notification,
+            reserva_id=nueva_reserva.id,
+            docente_nombre=docente_nombre,
+            aula_nombre=aula_nombre,
+            fecha=fecha,
+            hora=f"{hora_inicio} - {hora_fin}"
+        )
+    except Exception as e:
+        print(f"Error al enviar notificación al admin: {e}")
+
     return {"message": "Reserva creada exitosamente", "id": nueva_reserva.id}
 
 @router.get("/mis-reservas/{docente_id}")
@@ -177,6 +196,7 @@ def obtener_mis_reservas(docente_id: int, db: Session = Depends(get_db)):
 def cancelar_reserva(
     reserva_id: int,
     data: CancelarReservaSchema,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     reserva = db.query(Reserva).filter(
@@ -200,6 +220,20 @@ def cancelar_reserva(
 
     reserva.estado = "cancelada"
     db.commit()
+
+    # Notificar al administrador sobre la cancelación
+    try:
+        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
+        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
+        background_tasks.add_task(
+            send_cancellation_notification,
+            reserva_id=reserva.id,
+            docente_nombre=f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido",
+            aula_nombre=aula.nombre if aula else "Desconocido",
+            fecha=reserva.fecha.strftime("%Y-%m-%d")
+        )
+    except Exception as e:
+        print(f"Error al enviar notificación de cancelación: {e}")
 
     return {"message": "Reserva cancelada exitosamente"}
 
@@ -239,7 +273,7 @@ def obtener_reservas_pendientes(db: Session = Depends(get_db)):
     return lista_reservas
 
 @router.post("/aprobar-reserva/{reserva_id}")
-def aprobar_reserva(reserva_id: int, db: Session = Depends(get_db)):
+def aprobar_reserva(reserva_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Aprobar reserva (solo admin)"""
     
     reserva = db.query(Reserva).filter(Reserva.id == reserva_id).first()
@@ -249,10 +283,26 @@ def aprobar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     reserva.estado = "aprobada"
     db.commit()
     
+    # Notificar al docente
+    try:
+        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
+        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
+        if docente and docente.correo:
+            background_tasks.add_task(
+                send_status_update_email,
+                email_docente=docente.correo,
+                docente_nombre=f"{docente.nombres} {docente.apellidos}",
+                aula_nombre=aula.nombre if aula else "Aula desconocida",
+                fecha=reserva.fecha.strftime("%Y-%m-%d"),
+                nuevo_estado="APROBADA"
+            )
+    except Exception as e:
+        print(f"Error al enviar notificación al docente: {e}")
+    
     return {"message": "Reserva aprobada exitosamente"}
 
 @router.post("/rechazar-reserva/{reserva_id}")
-def rechazar_reserva(reserva_id: int, db: Session = Depends(get_db)):
+def rechazar_reserva(reserva_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Rechazar reserva (solo admin)"""
     
     reserva = db.query(Reserva).filter(Reserva.id == reserva_id).first()
@@ -261,6 +311,22 @@ def rechazar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     
     reserva.estado = "rechazada"
     db.commit()
+    
+    # Notificar al docente
+    try:
+        docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
+        aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
+        if docente and docente.correo:
+            background_tasks.add_task(
+                send_status_update_email,
+                email_docente=docente.correo,
+                docente_nombre=f"{docente.nombres} {docente.apellidos}",
+                aula_nombre=aula.nombre if aula else "Aula desconocida",
+                fecha=reserva.fecha.strftime("%Y-%m-%d"),
+                nuevo_estado="RECHAZADA"
+            )
+    except Exception as e:
+        print(f"Error al enviar notificación al docente: {e}")
     
     return {"message": "Reserva rechazada exitosamente"}
 
