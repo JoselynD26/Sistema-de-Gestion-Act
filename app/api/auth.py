@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
@@ -16,31 +16,27 @@ def get_db():
         db.close()
 
 @router.post("/solicitar-codigo-admin/")
-def solicitar_codigo_admin(email: str, nombres: str):
+def solicitar_codigo_admin(email: str, nombres: str, background_tasks: BackgroundTasks):
     from app.services.email_service import email_service
-
+    print(f"DEBUG: solicitud codigo admin para {email} ({nombres})")
     try:
-        success = email_service.send_admin_verification_email(email, nombres)
-        if success:
-            return {"message": "Código de verificación enviado al email"}
-        else:
-            raise HTTPException(status_code=500, detail="Error al enviar email")
-
+        background_tasks.add_task(email_service.send_admin_verification_email, email, nombres)
+        return {"message": "Si hay administradores en el sistema, se les enviará un código de verificación."}
     except Exception as e:
-        print("ERROR solicitar_codigo_admin:", e)
+        print(f"ERROR solicitar_codigo_admin: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 class EmailRequest(BaseModel):
     correo: EmailStr
 
 @router.post("/solicitar-recuperacion/")
-def solicitar_recuperacion(request: EmailRequest, db: Session = Depends(get_db)):
+def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Solicita recuperación de contraseña:
     1. Verifica que el correo exista
     2. Genera una contraseña temporal
     3. Actualiza el usuario con la nueva contraseña
-    4. Envía la contraseña por correo
+    4. Envía la contraseña por correo (via BackgroundTasks)
     """
     from app.services.email_service import email_service
     from app.core.seguridad import obtener_hash_contrasena
@@ -50,10 +46,8 @@ def solicitar_recuperacion(request: EmailRequest, db: Session = Depends(get_db))
     # 1. Buscar usuario
     usuario = db.query(Usuario).filter(Usuario.correo == request.correo).first()
     if not usuario:
-        # Por seguridad, no indicamos si el correo existe o no explícitamente, 
-        # pero para UX daremos un mensaje genérico de éxito o un 404 si preferimos ser explícitos.
-        # En este caso, seremos explícitos para ayudar al usuario final.
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        print(f"DEBUG ALERT: Se intento recuperar contrasena para correo NO REGISTRADO: {request.correo}")
+        raise HTTPException(status_code=404, detail=f"El correo {request.correo} no está registrado en el sistema.")
 
     # 2. Generar contraseña temporal segura
     alphabet = string.ascii_letters + string.digits
@@ -64,25 +58,22 @@ def solicitar_recuperacion(request: EmailRequest, db: Session = Depends(get_db))
     usuario.contrasena = hashed_password
     db.commit()
 
-    # 4. Enviar correo
+    # 4. Enviar correo via BackgroundTasks
+    print(f"DEBUG: solicitud recuperacion para {request.correo}, pass temporal generada")
     try:
-        # Determinar nombre para el correo
         nombre_email = usuario.nombres if usuario.nombres else "Usuario"
         
-        success = email_service.send_password_recovery_email(
+        background_tasks.add_task(
+            email_service.send_password_recovery_email,
             request.correo,
             temp_password,
             nombre_email
         )
         
-        if not success:
-             raise HTTPException(status_code=500, detail="Error enviando el correo de recuperación")
-             
-        return {"message": "Correo de recuperación enviado exitosamente"}
+        return {"message": "Correo de recuperación solicitado exitosamente"}
         
     except Exception as e:
-        print(f"Error en recuperación: {e}")
-        # DEBUG: Exposing real error
+        print(f"Error en solicitar_recuperacion (envio correo): {e}")
         raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
 
 
