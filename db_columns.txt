@@ -1,0 +1,8 @@
+Columnas en tabla 'usuario':
+- id (INTEGER)
+- nombres (VARCHAR)
+- apellidos (VARCHAR)
+- correo (VARCHAR(100))
+- contrasena (VARCHAR(100))
+- rol (VARCHAR(50))
+- id_docente (INTEGER)

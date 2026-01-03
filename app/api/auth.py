@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
 from app.crud.usuario import crear_usuario, autenticar_usuario
@@ -28,6 +29,62 @@ def solicitar_codigo_admin(email: str, nombres: str):
     except Exception as e:
         print("ERROR solicitar_codigo_admin:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+class EmailRequest(BaseModel):
+    correo: EmailStr
+
+@router.post("/solicitar-recuperacion/")
+def solicitar_recuperacion(request: EmailRequest, db: Session = Depends(get_db)):
+    """
+    Solicita recuperación de contraseña:
+    1. Verifica que el correo exista
+    2. Genera una contraseña temporal
+    3. Actualiza el usuario con la nueva contraseña
+    4. Envía la contraseña por correo
+    """
+    from app.services.email_service import email_service
+    from app.core.seguridad import obtener_hash_contrasena
+    import secrets
+    import string
+
+    # 1. Buscar usuario
+    usuario = db.query(Usuario).filter(Usuario.correo == request.correo).first()
+    if not usuario:
+        # Por seguridad, no indicamos si el correo existe o no explícitamente, 
+        # pero para UX daremos un mensaje genérico de éxito o un 404 si preferimos ser explícitos.
+        # En este caso, seremos explícitos para ayudar al usuario final.
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 2. Generar contraseña temporal segura
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
+    
+    # 3. Actualizar contraseña en BD
+    hashed_password = obtener_hash_contrasena(temp_password)
+    usuario.contrasena = hashed_password
+    db.commit()
+
+    # 4. Enviar correo
+    try:
+        # Determinar nombre para el correo
+        nombre_email = usuario.nombres if usuario.nombres else "Usuario"
+        
+        success = email_service.send_password_recovery_email(
+            request.correo,
+            temp_password,
+            nombre_email
+        )
+        
+        if not success:
+             raise HTTPException(status_code=500, detail="Error enviando el correo de recuperación")
+             
+        return {"message": "Correo de recuperación enviado exitosamente"}
+        
+    except Exception as e:
+        print(f"Error en recuperación: {e}")
+        # DEBUG: Exposing real error
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")
+
 
 
 @router.post("/registro-admin/")
@@ -64,6 +121,10 @@ def cambiar_contrasena(
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
+    # Validar espacios en nueva contraseña
+    if " " in datos.nueva_contrasena:
+        raise HTTPException(status_code=400, detail="La nueva contraseña no puede contener espacios")
+
     from app.core.seguridad import obtener_hash_contrasena, verificar_contrasena
     # Verificar contraseña actual
     if not verificar_contrasena(datos.contrasena_actual, usuario_actual.contrasena):
@@ -77,6 +138,10 @@ def cambiar_contrasena(
 
 @router.post("/login/")
 def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
+    # Validar espacios
+    if " " in datos.correo or " " in datos.contrasena:
+        raise HTTPException(status_code=400, detail="El correo y la contraseña no pueden contener espacios")
+
     usuario = autenticar_usuario(db, datos.correo, datos.contrasena)
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")

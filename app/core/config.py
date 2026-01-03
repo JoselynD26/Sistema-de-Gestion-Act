@@ -38,9 +38,9 @@ try:
         pool_size=20,
         max_overflow=30
     )
-    print("✅ Motor de base de datos creado exitosamente")
+    print("Motor de base de datos creado exitosamente")
 except Exception as e:
-    print(f"❌ ERROR al crear motor de base de datos: {e}")
+    print(f"ERROR al crear motor de base de datos: {e}")
     raise
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

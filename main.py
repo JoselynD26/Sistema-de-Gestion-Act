@@ -23,9 +23,7 @@ app = FastAPI(
 # =========================
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://sistemagestionyavirac.netlify.app",
-    ],
+    allow_origins=["*"],
     allow_origin_regex=r"http://localhost:\d+",  # Permite cualquier puerto en localhost
     allow_credentials=True,
     allow_methods=["*"],

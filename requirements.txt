@@ -9,6 +9,7 @@ typer
 python-dotenv
 email-validator
 passlib[argon2]
+bcrypt==4.0.1
 python-jose[cryptography]
 python-multipart
 supabase

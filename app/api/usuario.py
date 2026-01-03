@@ -140,3 +140,42 @@ def reset_contrasena(
     db.commit()
     return {"message": "Contraseña reseteada exitosamente"}
 
+# Endpoint alias para recuperación (Compatibilidad con Frontend)
+from app.schemas.usuario import UsuarioCreate # Dummy import if needed, or use Body
+from pydantic import BaseModel, EmailStr
+
+class EmailRequest(BaseModel):
+    correo: EmailStr
+
+@router.post("/usuarios/recuperar-contrasena")
+def recuperar_contrasena_alias(request: EmailRequest, db: Session = Depends(get_db)):
+    """
+    Alias para solicitar recuperación de contraseña.
+    Redirige lógica a la misma implementación que auth.solicitar_recuperacion
+    """
+    from app.services.email_service import email_service
+    from app.core.seguridad import obtener_hash_contrasena
+    import secrets
+    import string
+    from fastapi import HTTPException
+
+    # Lógica duplicada de auth.py (Idealmente refactorizar a controlador común, pero por rapidez duplicamos aquí)
+    usuario = db.query(Usuario).filter(Usuario.correo == request.correo).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
+    
+    usuario.contrasena = obtener_hash_contrasena(temp_password)
+    db.commit()
+
+    nombre_email = usuario.nombres if usuario.nombres else "Usuario"
+    success = email_service.send_password_recovery_email(request.correo, temp_password, nombre_email)
+    
+    if not success:
+         raise HTTPException(status_code=500, detail="Error enviando el correo")
+         
+    return {"message": "Correo de recuperación enviado exitosamente"}
+
+

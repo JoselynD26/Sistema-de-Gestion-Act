@@ -12,11 +12,11 @@ import hashlib
 # 🔐 Configuración de seguridad
 SECRET_KEY = "tu_clave_secreta_segura"
 ALGORITHM = "HS256"
-EXPIRACION_MINUTOS = 60
+EXPIRACION_MINUTOS = 10080  # 7 días
 
 # Configuración de hashing de contraseñas
 # Usamos argon2 como preferido, pero bcrypt también es una buena opción standard
-pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt", "argon2"], deprecated="auto")
 
 # 🔑 Esquema de autenticación
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login/")

@@ -17,6 +17,8 @@ class EmailService:
         
         # Almacén temporal de códigos de verificación (en producción usar Redis)
         self.verification_codes: Dict[str, dict] = {}
+        # Rate limiting storage: email -> last_sent_timestamp
+        self.last_sent: Dict[str, datetime] = {}
     
     def generate_verification_code(self, email: str) -> str:
         """Genera un código de verificación de 6 dígitos"""
@@ -84,38 +86,56 @@ class EmailService:
                     
                     # Cuerpo del email
                     body = f"""
+                    <!DOCTYPE html>
                     <html>
-                    <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                        <div style="background: linear-gradient(135deg, #1E3A8A, #FF6B35); padding: 20px; text-align: center;">
-                            <h1 style="color: white; margin: 0;">🎓 YAVIRAC</h1>
-                            <p style="color: white; margin: 5px 0;">Sistema de Gestión Académica</p>
-                        </div>
-                        
-                        <div style="padding: 30px; background: #f9f9f9;">
-                            <h2 style="color: #1E3A8A;">Hola {admin.nombres} te damos la bienvenida al Sistema de Gestión Académica Yavirac,</h2>
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    </head>
+                    <body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                            <!-- Header -->
+                            <tr>
+                                <td style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 40px 0; text-align: center;">
+                                    <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">YAVIRAC</h1>
+                                    <p style="color: #94A3B8; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Gestión Académica</p>
+                                </td>
+                            </tr>
                             
-                            <p><strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado crear una cuenta de <strong>Administrador</strong> en el sistema.</p>
+                            <!-- Content -->
+                            <tr>
+                                <td style="padding: 40px 30px;">
+                                    <h2 style="color: #1E293B; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Autorización Requerida</h2>
+                                    
+                                    <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                                        Hola <strong>{admin.nombres}</strong>,<br><br>
+                                        <strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado acceso administrativo al sistema.
+                                    </p>
+                                    
+                                    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 25px; text-align: center; margin: 30px 0;">
+                                        <p style="margin: 0 0 10px 0; color: #64748B; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Código de Verificación</p>
+                                        <div style="color: #0F172A; font-size: 38px; font-weight: 700; letter-spacing: 6px; font-family: monospace;">{code}</div>
+                                        <p style="margin: 10px 0 0 0; color: #EF4444; font-size: 13px;">Expira en 10 minutos</p>
+                                    </div>
+                                    
+                                    <div style="background-color: #FFF7ED; border-left: 4px solid #F97316; padding: 15px; border-radius: 4px;">
+                                        <p style="margin: 0; color: #C2410C; font-size: 14px; line-height: 1.5;">
+                                            <strong>Seguridad:</strong> Solo comparte este código si reconoces y autorizas esta solicitud.
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
                             
-                            <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0;">
-                                <p style="margin: 0; color: #666;">Código de autorización:</p>
-                                <h1 style="color: #FF6B35; font-size: 36px; margin: 10px 0; letter-spacing: 5px;">{code}</h1>
-                                <p style="margin: 0; color: #666; font-size: 14px;">Este código expira en 10 minutos</p>
-                            </div>
-                            
-                            <p style="color: #666;">
-                                <strong>⚠️ Instrucciones:</strong><br>
-                                • Si autorizas esta solicitud, proporciona este código al solicitante<br>
-                                • Si no conoces al solicitante, NO compartas este código<br>
-                                • Cada código solo puede usarse una vez
-                            </p>
-                            
-                            <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
-                            
-                            <p style="color: #999; font-size: 12px; text-align: center;">
-                                Este es un email automático del Sistema de Gestión Académica Yavirac<br>
-                                Desarrollado por: Joselyn Dicao, María Ortiz y Raul Hidalgo
-                            </p>
-                        </div>
+                            <!-- Footer -->
+                            <tr>
+                                <td style="background-color: #F1F5F9; padding: 20px; text-align: center; border-top: 1px solid #E2E8F0;">
+                                    <p style="margin: 0; color: #64748B; font-size: 12px;">
+                                        &copy; {datetime.now().year} Instituto Tecnológico Yavirac<br>
+                                        Sistema de Gestión Académica Seguro
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
                     </body>
                     </html>
                     """
@@ -138,6 +158,94 @@ class EmailService:
         except Exception as e:
             print(f"Error enviando email: {e}")
             return False
+
+    def send_password_recovery_email(self, email: str, temp_password: str, nombres: str) -> bool:
+        """Envía email con contraseña temporal para recuperación"""
+        try:
+            # Rate Limiting: Ignorar envíos si pasó menos de 30 seg desde el último
+            if email in self.last_sent:
+                last_time = self.last_sent[email]
+                if datetime.now() - last_time < timedelta(seconds=30):
+                    print(f"Rate Limit: Ignorando envío duplicado a {email} hace menos de 30s")
+                    return True  # Retornamos True para que el usuario crea que se envió (evita spam)
+
+            msg = MIMEMultipart()
+            msg['From'] = f"{self.from_name} <{self.from_email}>"
+            msg['To'] = email
+            msg['Subject'] = "Recuperación de Contraseña - Yavirac"
+            
+            body = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 40px 0; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 1px;">YAVIRAC</h1>
+                            <p style="color: #94A3B8; margin: 5px 0 0 0; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Recuperación de Cuenta</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 30px;">
+                            <h2 style="color: #1E293B; margin: 0 0 20px 0; font-size: 24px; font-weight: 600;">Contraseña Temporal</h2>
+                            
+                            <p style="color: #475569; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+                                Hola <strong>{nombres}</strong>,<br><br>
+                                Hemos recibido una solicitud para recuperar tu acceso. Tu contraseña ha sido reseteada temporalmente.
+                            </p>
+                            
+                            <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 25px; text-align: center; margin: 30px 0;">
+                                <p style="margin: 0 0 10px 0; color: #15803D; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Tu Nueva Contraseña</p>
+                                <div style="color: #166534; font-size: 32px; font-weight: 700; letter-spacing: 2px; font-family: monospace;">{temp_password}</div>
+                            </div>
+                            
+                            <p style="color: #475569; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+                                <strong>Siguientes pasos:</strong><br>
+                                1. Ingresa al sistema con esta contraseña.<br>
+                                2. Ve a tu perfil y cambia la contraseña por una segura.<br>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #F1F5F9; padding: 20px; text-align: center; border-top: 1px solid #E2E8F0;">
+                            <p style="margin: 0; color: #64748B; font-size: 12px;">
+                                &copy; {datetime.now().year} Instituto Tecnológico Yavirac<br>
+                                Si no solicitaste esto, contacta a soporte inmediatamente.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </body>
+            </html>
+            """
+            
+            msg.attach(MIMEText(body, 'html'))
+            
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            server.starttls()
+            server.login(self.smtp_username, self.smtp_password)
+            server.send_message(msg)
+            server.quit()
+            
+            # Actualizar timestamp del último envío
+            self.last_sent[email] = datetime.now()
+            
+            print(f"Email de recuperación enviado a {email}")
+            return True
+            
+        except Exception as e:
+            print(f"Error enviando email de recuperación: {e}")
+            return False
+
 
 # Instancia global del servicio
 email_service = EmailService()
