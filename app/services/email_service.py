@@ -74,12 +74,12 @@ class EmailService:
                     return False
                 
                 code = self.generate_verification_code(solicitante_email)
-                admin_emails = [admin.correo for admin in admins]
+                admins_data = [{"correo": admin.correo, "nombres": admin.nombres} for admin in admins]
                 
-                print(f"DEBUG: Enviando codigo {code} a {admin_emails}")
+                print(f"DEBUG: Enviando codigo {code} a {len(admins_data)} administradores")
                 # Enviar email usando el utilitario async (FastMail)
                 await send_verification_email_to_admins(
-                    admin_emails=admin_emails,
+                    admins=admins_data,
                     solicitante_email=solicitante_email,
                     solicitante_nombres=solicitante_nombres,
                     code=code

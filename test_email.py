@@ -13,7 +13,8 @@ async def test():
 
     try:
         # Trigger the async service
-        success = await email_service.send_admin_verification_email("test@example.com", "Test User")
+        # Note: This will fetch real admins from DB and try to send real emails if configured!
+        success = await email_service.send_admin_verification_email("test@example.com", "Test User (Antigravity)")
         if success:
             print("SUCCESS: Email task triggered successfully")
         else:

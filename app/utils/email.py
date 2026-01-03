@@ -210,21 +210,26 @@ async def send_cancellation_notification(reserva_id: int, docente_nombre: str, a
         content_html=content
     )
 
-async def send_verification_email_to_admins(admin_emails: List[str], solicitante_email: str, solicitante_nombres: str, code: str):
-    """Envía el código de verificación a los administradores para autorizar un nuevo registro."""
-    content = f"""
-        <p>Hola,</p>
-        <p><strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado acceso administrativo al sistema.</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; border: 1px solid #e9ecef;">
-            <p style="margin: 0; color: #6c757d; font-size: 14px;">CÓDIGO DE VERIFICACIÓN</p>
-            <h2 style="margin: 10px 0; color: #1e3c72; font-size: 32px; letter-spacing: 5px;">{code}</h2>
-            <p style="margin: 0; color: #dc3545; font-size: 12px;">Este código expira en 10 minutos.</p>
-        </div>
-        <p>Solo comparte este código si reconoces y autorizas esta solicitud.</p>
-    """
-    await send_email_template(
-        subject="🔐 Autorización de Nuevo Administrador",
-        recipients=admin_emails,
-        title="Autorización Requerida",
-        content_html=content
-    )
+async def send_verification_email_to_admins(admins: List[dict], solicitante_email: str, solicitante_nombres: str, code: str):
+    """Envía el código de verificación personalizado a cada administrador."""
+    for admin in admins:
+        admin_email = admin.get("correo")
+        admin_nombre = admin.get("nombres", "Administrador")
+        
+        content = f"""
+            <p>Hola <strong>{admin_nombre}</strong>,</p>
+            <p><strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado acceso administrativo al sistema.</p>
+            <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; border: 1px solid #e9ecef;">
+                <p style="margin: 0; color: #6c757d; font-size: 14px;">CÓDIGO DE VERIFICACIÓN</p>
+                <h2 style="margin: 10px 0; color: #1e3c72; font-size: 32px; letter-spacing: 5px;">{code}</h2>
+                <p style="margin: 0; color: #dc3545; font-size: 12px;">Este código expira en 10 minutos.</p>
+            </div>
+            <p>Solo comparte este código si reconoces y autorizas esta solicitud.</p>
+        """
+        
+        await send_email_template(
+            subject="🔐 Autorización de Nuevo Administrador",
+            recipients=[admin_email],
+            title="Autorización Requerida",
+            content_html=content
+        )
