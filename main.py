@@ -21,13 +21,18 @@ app = FastAPI(
 # =========================
 # 🔥 CORS GLOBAL (BASE)
 # =========================
-# =========================
-# 🔥 CORS GLOBAL (BASE)
-# =========================
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "https://front-sistema-8hz.pages.dev",
+    "https://sistema-de-gestion-act-bj8j.onrender.com",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_origin_regex=r"http://localhost:\d+",  # Permite cualquier puerto en localhost
+    allow_origins=origins,
+    allow_origin_regex=r"http?://localhost:\d+", # Permite cualquier puerto en localhost
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

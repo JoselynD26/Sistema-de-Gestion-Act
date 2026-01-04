@@ -21,8 +21,10 @@ conf = ConnectionConfig(
     MAIL_SSL_TLS=False,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True,
-    TEMPLATE_FOLDER=None  # Podríamos usar Jinja2 directamente o configurar una carpeta
+    TEMPLATE_FOLDER=None
 )
+
+print(f"DEBUG EMAIL CONFIG: Server={MAIL_SERVER}:{MAIL_PORT}, User={MAIL_USERNAME}, From={MAIL_FROM}")
 
 fastmail = FastMail(conf)
 
@@ -138,9 +140,15 @@ async def send_email_template(subject: str, recipients: List[EmailStr], title: s
         subtype=MessageType.html
     )
     
-    print(f"DEBUG EMAIL: Enviando correo '{subject}' a {recipients}...")
-    await fastmail.send_message(message)
-    print(f"DEBUG EMAIL: Correo '{subject}' enviado correctamente.")
+    print(f"DEBUG EMAIL: Preparando '{subject}' para {recipients}...")
+    try:
+        await fastmail.send_message(message)
+        print(f"DEBUG EMAIL: '{subject}' enviado satisfactoriamente.")
+    except Exception as e:
+        print(f"DEBUG EMAIL ERROR: Falló el envío de '{subject}'. Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise e
 
 def fecha_actual():
     from datetime import datetime

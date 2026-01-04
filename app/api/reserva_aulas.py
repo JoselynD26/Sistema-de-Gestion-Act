@@ -150,6 +150,7 @@ def crear_reserva(request: dict, background_tasks: BackgroundTasks, db: Session 
         admin_emails = [admin.correo for admin in admins] if admins else []
         
         if admin_emails:
+            print(f"DEBUG: Agregando tarea de notificacion admin para reserva {nueva_reserva.id} a {admin_emails}")
             background_tasks.add_task(
                 send_admin_notification,
                 admin_emails=admin_emails,

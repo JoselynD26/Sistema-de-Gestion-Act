@@ -18,8 +18,8 @@ def get_db():
 @router.post("/solicitar-codigo-admin/")
 def solicitar_codigo_admin(email: str, nombres: str, background_tasks: BackgroundTasks):
     from app.services.email_service import email_service
-    print(f"DEBUG: solicitud codigo admin para {email} ({nombres})")
     try:
+        print(f"DEBUG: Agregando tarea de email a BackgroundTasks para {email}")
         background_tasks.add_task(email_service.send_admin_verification_email, email, nombres)
         return {"message": "Si hay administradores en el sistema, se les enviará un código de verificación."}
     except Exception as e:
