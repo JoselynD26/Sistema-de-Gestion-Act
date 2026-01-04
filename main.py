@@ -15,8 +15,7 @@ from app.api import (
 app = FastAPI(
     title="Sistema Académico",
     description="API protegida con JWT por rol",
-    version="1.0.0",
-    redirect_slashes=False
+    version="1.0.0"
 )
 
 # =========================
@@ -49,8 +48,8 @@ def root():
 # =========================
 # RUTAS
 # =========================
-app.include_router(auth.router)
-app.include_router(usuario.router)
+app.include_router(auth.router, tags=["Auth"])
+app.include_router(usuario.router, prefix="/usuarios", tags=["Usuarios"])
 app.include_router(docente.router)
 app.include_router(aula.router)
 app.include_router(materia.router, prefix="/materias")

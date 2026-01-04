@@ -16,17 +16,17 @@ from app.crud.usuario import (
 from app.core.seguridad import obtener_usuario_actual, solo_admin, crear_token
 from app.models.usuario import Usuario
 
-router = APIRouter(redirect_slashes=False)
+router = APIRouter()
 
 # Usamos get_db de core.config
 
 # Crear usuario (solo admin)
-@router.post("/usuarios/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
+@router.post("/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def registrar(data: UsuarioCreate, db: Session = Depends(get_db)):
     return crear_usuario(db, data)
 
 # Login y generación de token
-@router.post("/usuarios/login/")
+@router.post("/login/")
 def login(correo: str, contrasena: str, db: Session = Depends(get_db)):
     usuario = autenticar_usuario(db, correo, contrasena)
     if not usuario:
@@ -41,33 +41,33 @@ def login(correo: str, contrasena: str, db: Session = Depends(get_db)):
     }
 
 # Listar todos los usuarios (solo admin)
-@router.get("/usuarios/", response_model=list[UsuarioOut], dependencies=[Depends(solo_admin)])
+@router.get("/", response_model=list[UsuarioOut], dependencies=[Depends(solo_admin)])
 def listar(db: Session = Depends(get_db)):
     return listar_usuarios(db)
 
 # Obtener usuario por ID (solo admin)
-@router.get("/usuarios/{usuario_id}", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
+@router.get("/{usuario_id}/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def obtener(usuario_id: int, db: Session = Depends(get_db)):
     return obtener_usuario(db, usuario_id)
 
 # Eliminar usuario (solo admin)
-@router.delete("/usuarios/{usuario_id}", dependencies=[Depends(solo_admin)])
+@router.delete("/{usuario_id}/", dependencies=[Depends(solo_admin)])
 def eliminar(usuario_id: int, db: Session = Depends(get_db)):
     return eliminar_usuario(db, usuario_id)
 
 # Crear cuenta para docente (solo admin)
-@router.post("/usuarios/docente/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
+@router.post("/docente/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def crear_para_docente(data: UsuarioCreate, db: Session = Depends(get_db)):
     return crear_usuario_para_docente(db, data)
 
 # Listar docentes sin cuenta (solo admin)
-@router.get("/usuarios/docentes-sin-cuenta/", dependencies=[Depends(solo_admin)])
+@router.get("/docentes-sin-cuenta/", dependencies=[Depends(solo_admin)])
 def listar_docentes_sin_usuario(db: Session = Depends(get_db)):
     return docentes_sin_usuario(db)
 
 # Actualizar usuario (Universal: Admin a cualquiera, Docente a sí mismo)
-@router.put("/usuarios/{usuario_id}", response_model=UsuarioOut)
-@router.patch("/usuarios/{usuario_id}", response_model=UsuarioOut)
+@router.put("/{usuario_id}/", response_model=UsuarioOut)
+@router.patch("/{usuario_id}/", response_model=UsuarioOut)
 def update_usuario_universal(
     usuario_id: int,
     data: UsuarioUpdate,
@@ -101,7 +101,7 @@ def update_usuario_universal(
     return usuario_objetivo
 
 # Ruta antigua para compatibilidad frontend (si la usan sin ID)
-@router.put("/usuarios/editar/", response_model=UsuarioOut)
+@router.put("/editar/", response_model=UsuarioOut)
 def editar_mi_perfil_compat(
     data: UsuarioUpdate, 
     db: Session = Depends(get_db), 
@@ -110,7 +110,7 @@ def editar_mi_perfil_compat(
     return update_usuario_universal(usuario_actual.id, data, db, usuario_actual)
 
 # Resetear contraseña (admin o el mismo usuario)
-@router.put("/usuarios/reset/{usuario_id}")
+@router.put("/reset/{usuario_id}/")
 def reset_contrasena(
     usuario_id: int, 
     data: UsuarioResetPassword, 
@@ -141,7 +141,7 @@ from pydantic import BaseModel, EmailStr
 class EmailRequest(BaseModel):
     correo: EmailStr
 
-@router.post("/usuarios/recuperar-contrasena")
+@router.post("/recuperar-contrasena/")
 def recuperar_contrasena_alias(request: EmailRequest, db: Session = Depends(get_db)):
     """
     Alias para solicitar recuperación de contraseña.
