@@ -1,5 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from app.core.config import get_db
 from app.schemas.usuario import UsuarioCreate, UsuarioOut, UsuarioResetPassword, UsuarioUpdate
 from app.crud.usuario import (

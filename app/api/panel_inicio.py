@@ -7,7 +7,6 @@ from app.models.docente import Docente
 from app.models.reserva import Reserva
 from app.models.notificacion import Notificacion
 from app.models.sede import Sede
-from app.core.seguridad import solo_admin 
 router = APIRouter()
 
 

@@ -1,5 +1,5 @@
-```python
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
 from app.crud.usuario import crear_usuario, autenticar_usuario
