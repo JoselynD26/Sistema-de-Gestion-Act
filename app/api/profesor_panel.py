@@ -272,7 +272,7 @@ def obtener_mi_escritorio(docente_id: int, db: Session = Depends(get_db)):
     if escritorio:
         return {
             "id": escritorio.id,
-            "numero": escritorio.numero,
+            "codigo": escritorio.codigo,
             "sala_id": escritorio.sala_id,
             "carrera_id": escritorio.carrera_id,
             "asignado": True
@@ -297,7 +297,7 @@ def obtener_escritorios_disponibles(sede_id: int, db: Session = Depends(get_db))
     for escritorio in escritorios:
         resultado.append({
             "id": escritorio.id,
-            "numero": escritorio.numero,
+            "codigo": escritorio.codigo,
             "sala_id": escritorio.sala_id,
             "carrera_id": escritorio.carrera_id
         })
