@@ -138,7 +138,9 @@ async def send_email_template(subject: str, recipients: List[EmailStr], title: s
         subtype=MessageType.html
     )
     
+    print(f"DEBUG EMAIL: Enviando correo '{subject}' a {recipients}...")
     await fastmail.send_message(message)
+    print(f"DEBUG EMAIL: Correo '{subject}' enviado correctamente.")
 
 def fecha_actual():
     from datetime import datetime

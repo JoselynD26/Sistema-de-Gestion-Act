@@ -70,7 +70,7 @@ def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTa
             nombre_email
         )
         
-        return {"message": "Correo de recuperación solicitado exitosamente"}
+        return {"message": "[V2] Correo de recuperación solicitado. Revisa tu bandeja de entrada y spam."}
         
     except Exception as e:
         print(f"Error en solicitar_recuperacion (envio correo): {e}")
