@@ -1,19 +1,13 @@
+```python
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
 from app.crud.usuario import crear_usuario, autenticar_usuario
-from app.core.config import SessionLocal
-from app.core.seguridad import crear_token, obtener_usuario_actual
+from app.core.config import get_db
+from app.core.seguridad import crear_token, obtener_usuario_actual, verificar_contrasena, obtener_hash_contrasena
 from app.models.usuario import Usuario
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/solicitar-codigo-admin/")
 def solicitar_codigo_admin(email: str, nombres: str, background_tasks: BackgroundTasks):
@@ -39,7 +33,6 @@ def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTa
     4. Envía la contraseña por correo (via BackgroundTasks)
     """
     from app.services.email_service import email_service
-    from app.core.seguridad import obtener_hash_contrasena
     import secrets
     import string
 
@@ -116,7 +109,6 @@ def cambiar_contrasena(
     if " " in datos.nueva_contrasena:
         raise HTTPException(status_code=400, detail="La nueva contraseña no puede contener espacios")
 
-    from app.core.seguridad import obtener_hash_contrasena, verificar_contrasena
     # Verificar contraseña actual
     if not verificar_contrasena(datos.contrasena_actual, usuario_actual.contrasena):
         raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
@@ -128,12 +120,12 @@ def cambiar_contrasena(
     return {"message": "Contraseña actualizada exitosamente"}
 
 @router.post("/login/")
-def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
+def login(data: UsuarioLogin, db: Session = Depends(get_db)):
     # Validar espacios
-    if " " in datos.correo or " " in datos.contrasena:
+    if " " in data.correo or " " in data.contrasena:
         raise HTTPException(status_code=400, detail="El correo y la contraseña no pueden contener espacios")
 
-    usuario = autenticar_usuario(db, datos.correo, datos.contrasena)
+    usuario = autenticar_usuario(db, data.correo, data.contrasena)
     if not usuario:
         raise HTTPException(status_code=401, detail="Credenciales inválidas")
     token = crear_token(usuario.id, usuario.rol)

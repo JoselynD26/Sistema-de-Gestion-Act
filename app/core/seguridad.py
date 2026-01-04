@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.core.config import SessionLocal
+from app.core.config import SessionLocal, get_db
 from app.models.usuario import Usuario
 
 from passlib.context import CryptContext
@@ -62,7 +62,7 @@ def crear_token(usuario_id: int, rol: str):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 # 👤 Obtener usuario desde el token
-def obtener_usuario_actual(token: str = Depends(oauth2_scheme), db: Session = Depends(lambda: SessionLocal())):
+def obtener_usuario_actual(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         usuario_id = int(payload.get("sub"))
@@ -80,3 +80,19 @@ def solo_admin(usuario: Usuario = Depends(obtener_usuario_actual)):
     if usuario.rol != "admin":
         raise HTTPException(status_code=403, detail="Acceso restringido a administradores")
     return usuario
+
+# 🎭 Protección por rol genérico
+def verificar_rol(rol_requerido: str):
+    def wrapper(usuario: Usuario = Depends(obtener_usuario_actual)):
+        if not hasattr(usuario, "rol"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El usuario no tiene rol asignado"
+            )
+        if usuario.rol != rol_requerido:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Acceso restringido para rol: {usuario.rol}"
+            )
+        return usuario
+    return wrapper

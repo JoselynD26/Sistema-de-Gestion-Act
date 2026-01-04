@@ -1,7 +1,6 @@
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from app.core.config import SessionLocal
+from app.core.config import get_db
 from app.schemas.usuario import UsuarioCreate, UsuarioOut, UsuarioResetPassword, UsuarioUpdate
 from app.crud.usuario import (
     crear_usuario,
@@ -13,21 +12,15 @@ from app.crud.usuario import (
     docentes_sin_usuario,
     actualizar_usuario
 )
-from app.dependencies.roles import verificar_rol, obtener_usuario_actual
+from app.core.seguridad import obtener_usuario_actual, solo_admin, crear_token
 from app.models.usuario import Usuario
-from app.auth.jwt_handler import crear_token
 
-router = APIRouter()
+router = APIRouter(redirect_slashes=False)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Usamos get_db de core.config
 
 # Crear usuario (solo admin)
-@router.post("/usuarios/", response_model=UsuarioOut, dependencies=[Depends(verificar_rol("admin"))])
+@router.post("/usuarios/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def registrar(data: UsuarioCreate, db: Session = Depends(get_db)):
     return crear_usuario(db, data)
 
@@ -47,27 +40,27 @@ def login(correo: str, contrasena: str, db: Session = Depends(get_db)):
     }
 
 # Listar todos los usuarios (solo admin)
-@router.get("/usuarios/", response_model=list[UsuarioOut], dependencies=[Depends(verificar_rol("admin"))])
+@router.get("/usuarios/", response_model=list[UsuarioOut], dependencies=[Depends(solo_admin)])
 def listar(db: Session = Depends(get_db)):
     return listar_usuarios(db)
 
 # Obtener usuario por ID (solo admin)
-@router.get("/usuarios/{usuario_id}", response_model=UsuarioOut, dependencies=[Depends(verificar_rol("admin"))])
+@router.get("/usuarios/{usuario_id}", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def obtener(usuario_id: int, db: Session = Depends(get_db)):
     return obtener_usuario(db, usuario_id)
 
 # Eliminar usuario (solo admin)
-@router.delete("/usuarios/{usuario_id}", dependencies=[Depends(verificar_rol("admin"))])
+@router.delete("/usuarios/{usuario_id}", dependencies=[Depends(solo_admin)])
 def eliminar(usuario_id: int, db: Session = Depends(get_db)):
     return eliminar_usuario(db, usuario_id)
 
 # Crear cuenta para docente (solo admin)
-@router.post("/usuarios/docente/", response_model=UsuarioOut, dependencies=[Depends(verificar_rol("admin"))])
+@router.post("/usuarios/docente/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def crear_para_docente(data: UsuarioCreate, db: Session = Depends(get_db)):
     return crear_usuario_para_docente(db, data)
 
 # Listar docentes sin cuenta (solo admin)
-@router.get("/usuarios/docentes-sin-cuenta/", dependencies=[Depends(verificar_rol("admin"))])
+@router.get("/usuarios/docentes-sin-cuenta/", dependencies=[Depends(solo_admin)])
 def listar_docentes_sin_usuario(db: Session = Depends(get_db)):
     return docentes_sin_usuario(db)
 

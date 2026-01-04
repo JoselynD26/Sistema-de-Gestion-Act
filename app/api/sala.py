@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.core.config import SessionLocal
+from app.core.config import get_db
 from app.schemas.sala import SalaCreate, SalaOut
 from app.crud import sala as crud
-from app.dependencies.roles import verificar_rol
+from app.core.seguridad import verificar_rol
 from app.dependencies.permisos import verificar_permiso_db
 
 router = APIRouter()
@@ -11,12 +11,6 @@ router = APIRouter()
 # -------------------
 # Dependencia para obtener la sesión de BD
 # -------------------
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # -------------------
 # Endpoints principales (CRUD)

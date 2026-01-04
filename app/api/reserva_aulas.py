@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc
 from datetime import datetime
-from app.core.config import SessionLocal
+from app.core.config import get_db
 from app.models.reserva import Reserva
 from app.models.aula import Aula
 from app.models.horario import Horario
@@ -15,12 +15,6 @@ from app.utils.email import send_admin_notification, send_status_update_email, s
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/aulas-disponibles")
 def obtener_aulas_disponibles(

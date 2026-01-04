@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.core.config import SessionLocal
+from app.core.config import get_db
 from app.schemas.reserva import ReservaCreate, ReservaOut
-from app.dependencies.roles import verificar_rol, obtener_usuario_actual
+from app.core.seguridad import verificar_rol, obtener_usuario_actual
 from app.controllers.reserva_controller import (
     crear_reserva_controller,
     aprobar_reserva_controller,
@@ -14,12 +14,6 @@ from app.models.usuario import Usuario
 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/reservas/", response_model=ReservaOut, dependencies=[Depends(verificar_rol("docente"))])
 def crear(data: ReservaCreate, db: Session = Depends(get_db)):

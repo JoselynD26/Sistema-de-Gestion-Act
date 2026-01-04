@@ -15,7 +15,8 @@ from app.api import (
 app = FastAPI(
     title="Sistema Académico",
     description="API protegida con JWT por rol",
-    version="1.0.0"
+    version="1.0.0",
+    redirect_slashes=False
 )
 
 # =========================
@@ -27,12 +28,12 @@ origins = [
     "http://localhost:8000",
     "https://front-sistema-8hz.pages.dev",
     "https://sistema-de-gestion-act-bj8j.onrender.com",
+    "https://sistemagestionyavirac.netlify.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"http?://localhost:\d+", # Permite cualquier puerto en localhost
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.core.config import SessionLocal
-from app.dependencies.roles import obtener_usuario_actual
+from app.core.config import get_db
+from app.core.seguridad import obtener_usuario_actual, solo_admin
 from app.models.usuario import Usuario
 from app.models.docente import Docente
 from app.models.reserva import Reserva
@@ -10,12 +10,6 @@ from app.models.sede import Sede
 from app.core.seguridad import solo_admin 
 router = APIRouter()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/panel-admin/")
 def ver_panel_admin(usuario=Depends(solo_admin)):
