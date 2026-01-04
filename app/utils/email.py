@@ -32,82 +32,188 @@ def send_email_template(subject: str, recipients: List[str], title: str, content
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            
             body {{
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                background-color: #f4f7f9;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 margin: 0;
-                padding: 0;
-                color: #333;
+                padding: 20px;
+                color: #2d3748;
             }}
             .container {{
                 width: 100%;
                 max-width: 600px;
-                margin: 20px auto;
+                margin: 0 auto;
                 background-color: #ffffff;
-                border-radius: 12px;
+                border-radius: 16px;
                 overflow: hidden;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             }}
             .header {{
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-                padding: 30px 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 40px 30px;
                 text-align: center;
-                color: white;
+                position: relative;
+                overflow: hidden;
+            }}
+            .header::before {{
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+                animation: pulse 3s ease-in-out infinite;
+            }}
+            @keyframes pulse {{
+                0%, 100% {{ transform: scale(1); opacity: 0.5; }}
+                50% {{ transform: scale(1.1); opacity: 0.8; }}
             }}
             .header h1 {{
                 margin: 0;
-                font-size: 24px;
-                letter-spacing: 1px;
+                font-size: 28px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+                color: white;
+                text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                position: relative;
+                z-index: 1;
+            }}
+            .logo {{
+                width: 60px;
+                height: 60px;
+                margin: 0 auto 15px;
+                background: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 30px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                position: relative;
+                z-index: 1;
             }}
             .content {{
-                padding: 40px 30px;
-                line-height: 1.6;
+                padding: 45px 35px;
+                line-height: 1.8;
+                font-size: 15px;
+            }}
+            .content p {{
+                margin: 0 0 15px 0;
+                color: #4a5568;
+            }}
+            .content strong {{
+                color: #2d3748;
+                font-weight: 600;
             }}
             .footer {{
-                background-color: #f8f9fa;
-                padding: 20px;
+                background: linear-gradient(to bottom, #f7fafc 0%, #edf2f7 100%);
+                padding: 25px;
                 text-align: center;
-                font-size: 12px;
-                color: #777;
-                border-top: 1px solid #eeeeee;
+                font-size: 13px;
+                color: #718096;
+                border-top: 1px solid #e2e8f0;
+            }}
+            .footer p {{
+                margin: 5px 0;
             }}
             .info-table {{
                 width: 100%;
-                border-collapse: collapse;
+                border-collapse: separate;
+                border-spacing: 0;
                 margin: 25px 0;
-                background-color: #f9f9f9;
-                border-radius: 8px;
+                background: linear-gradient(to bottom, #f7fafc 0%, #ffffff 100%);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
             }}
             .info-table td {{
-                padding: 12px 15px;
-                border-bottom: 1px solid #f0f0f0;
+                padding: 16px 20px;
+                border-bottom: 1px solid #e2e8f0;
+            }}
+            .info-table tr:last-child td {{
+                border-bottom: none;
             }}
             .info-table td.label {{
-                font-weight: bold;
-                color: #555;
-                width: 30%;
+                font-weight: 600;
+                color: #4a5568;
+                width: 35%;
+                font-size: 14px;
+            }}
+            .info-table td:last-child {{
+                color: #2d3748;
+                font-weight: 500;
             }}
             .status-badge {{
                 display: inline-block;
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-weight: bold;
-                font-size: 14px;
+                padding: 8px 16px;
+                border-radius: 25px;
+                font-weight: 600;
+                font-size: 13px;
                 text-transform: uppercase;
+                letter-spacing: 0.5px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             }}
-            .status-pendiente {{ background-color: #fff3cd; color: #856404; }}
-            .status-aprobada {{ background-color: #d4edda; color: #155724; }}
-            .status-rechazada {{ background-color: #f8d7da; color: #721c24; }}
-            
+            .status-pendiente {{ 
+                background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+                color: #78350f;
+            }}
+            .status-aprobada {{ 
+                background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+                color: #064e3b;
+            }}
+            .status-rechazada {{ 
+                background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+                color: #7f1d1d;
+            }}
             .button {{
                 display: inline-block;
-                padding: 12px 25px;
-                background-color: #1e3c72;
+                padding: 14px 32px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white !important;
                 text-decoration: none;
-                border-radius: 6px;
-                font-weight: bold;
+                border-radius: 8px;
+                font-weight: 600;
                 margin-top: 20px;
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                transition: all 0.3s ease;
+                font-size: 15px;
+                letter-spacing: 0.3px;
+            }}
+            .button:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            }}
+            .code-box {{
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 12px;
+                padding: 25px;
+                text-align: center;
+                margin: 25px 0;
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            }}
+            .code-box p {{
+                margin: 0 0 10px 0;
+                color: rgba(255,255,255,0.9);
+                font-size: 13px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }}
+            .code-box h2 {{
+                margin: 0;
+                color: white;
+                font-size: 36px;
+                font-weight: 700;
+                letter-spacing: 8px;
+                text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            }}
+            .code-box .expiry {{
+                margin: 10px 0 0 0;
+                color: rgba(255,255,255,0.8);
+                font-size: 12px;
             }}
         </style>
     </head>

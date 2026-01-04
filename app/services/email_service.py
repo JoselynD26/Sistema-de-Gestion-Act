@@ -20,7 +20,7 @@ class EmailService:
             if not admins:
                 return False
             code = self.generate_verification_code()
-            expires = datetime.now() + timedelta(minutes=10)
+            expires = datetime.now() + timedelta(seconds=90)  # 1.5 minutos
             self.verification_codes[solicitante_email] = {"code": code, "expires": expires}
             admin_list = [{"correo": admin.correo, "nombres": admin.nombres or "Administrador"} for admin in admins]
             send_admin_verification_codes(admin_list, solicitante_email, solicitante_nombres, code)
