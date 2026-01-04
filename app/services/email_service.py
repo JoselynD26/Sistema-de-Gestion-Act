@@ -62,6 +62,8 @@ class EmailService:
         return False
     
     async def send_admin_verification_email(self, solicitante_email: str, solicitante_nombres: str) -> bool:
+        """Env韆 email con c骴igo de verificaci髇 a administradores existentes (Versi髇 Async)"""
+        print(f"DEBUG EMAIL_SERVICE: Iniciando envio codigo admin para {solicitante_email}")
         """Env铆a email con c贸digo de verificaci贸n a administradores existentes (Versi贸n Async)"""
         print(f"DEBUG: Iniciando envio codigo admin a administradores para {solicitante_email}")
         try:
@@ -96,6 +98,8 @@ class EmailService:
             return False
 
     async def send_password_recovery_email(self, email: str, temp_password: str, nombres: str) -> bool:
+        """Env韆 email con contrase馻 temporal para recuperaci髇 (Versi髇 Async)"""
+        print(f"DEBUG EMAIL_SERVICE: Iniciando envio email recuperacion para {email}")
         """Env铆a email con contrase帽a temporal para recuperaci贸n (Versi贸n Async)"""
         print(f"DEBUG: Iniciando envio email recuperacion para {email}")
         try:

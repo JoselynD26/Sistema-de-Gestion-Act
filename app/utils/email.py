@@ -140,10 +140,11 @@ async def send_email_template(subject: str, recipients: List[EmailStr], title: s
         subtype=MessageType.html
     )
     
-    print(f"DEBUG EMAIL: Preparando '{subject}' para {recipients}...")
+    print(f"DEBUG EMAIL_UTILS: Preparando '{subject}' para {recipients}...")
+    print(f"DEBUG EMAIL_UTILS_CONFIG: Server={MAIL_SERVER}:{MAIL_PORT}, User={MAIL_USERNAME}, From={MAIL_FROM}")
     try:
         await fastmail.send_message(message)
-        print(f"DEBUG EMAIL: '{subject}' enviado satisfactoriamente.")
+        print(f"DEBUG EMAIL_UTILS: '{subject}' enviado satisfactoriamente.")
     except Exception as e:
         print(f"DEBUG EMAIL ERROR: Falló el envío de '{subject}'. Error: {str(e)}")
         import traceback
@@ -243,3 +244,4 @@ async def send_verification_email_to_admins(admins: List[dict], solicitante_emai
             title="Autorización Requerida",
             content_html=content
         )
+
