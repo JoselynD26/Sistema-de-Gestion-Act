@@ -154,3 +154,21 @@ def login(data: UsuarioLogin, db: Session = Depends(get_db)):
     print(f"DEBUG LOGIN - Usuario: {response.get('nombres')} {response.get('apellidos')}, Rol: {usuario.rol}")
     
     return response
+@router.get("/debug-email-test/")
+async def debug_email_test(email: str):
+    from app.utils.email import send_email_template
+    try:
+        print(f"DEBUG_TEST: Iniciando prueba de email para {email}")
+        await send_email_template(
+            subject=" Prueba de Conexión SMTP",
+            recipients=[email],
+            title="Prueba de Sistema",
+            content_html="<p>Si recibes esto, la configuración SMTP es <strong>correcta</strong>.</p>"
+        )
+        return {"status": "success", "message": f"Email enviado a {email}. Revisa tu bandeja."}
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"DEBUG_TEST_ERROR: {str(e)}")
+        return {"status": "error", "detail": str(e), "trace": error_trace}
+
