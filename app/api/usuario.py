@@ -45,16 +45,6 @@ def login(correo: str, contrasena: str, db: Session = Depends(get_db)):
 def listar(db: Session = Depends(get_db)):
     return listar_usuarios(db)
 
-# Obtener usuario por ID (solo admin)
-@router.get("/{usuario_id}/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
-def obtener(usuario_id: int, db: Session = Depends(get_db)):
-    return obtener_usuario(db, usuario_id)
-
-# Eliminar usuario (solo admin)
-@router.delete("/{usuario_id}/", dependencies=[Depends(solo_admin)])
-def eliminar(usuario_id: int, db: Session = Depends(get_db)):
-    return eliminar_usuario(db, usuario_id)
-
 # Crear cuenta para docente (solo admin)
 @router.post("/docente/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
 def crear_para_docente(data: UsuarioCreate, db: Session = Depends(get_db)):
@@ -64,6 +54,16 @@ def crear_para_docente(data: UsuarioCreate, db: Session = Depends(get_db)):
 @router.get("/docentes-sin-cuenta/", dependencies=[Depends(solo_admin)])
 def listar_docentes_sin_usuario(db: Session = Depends(get_db)):
     return docentes_sin_usuario(db)
+
+# Obtener usuario por ID (solo admin)
+@router.get("/{usuario_id}/", response_model=UsuarioOut, dependencies=[Depends(solo_admin)])
+def obtener(usuario_id: int, db: Session = Depends(get_db)):
+    return obtener_usuario(db, usuario_id)
+
+# Eliminar usuario (solo admin)
+@router.delete("/{usuario_id}/", dependencies=[Depends(solo_admin)])
+def eliminar(usuario_id: int, db: Session = Depends(get_db)):
+    return eliminar_usuario(db, usuario_id)
 
 # Actualizar usuario (Universal: Admin a cualquiera, Docente a sí mismo)
 @router.put("/{usuario_id}/", response_model=UsuarioOut)
