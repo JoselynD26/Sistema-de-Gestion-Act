@@ -22,7 +22,6 @@ app = FastAPI(
 # 🔥 CORS GLOBAL (BASE)
 # =========================
 origins = [
-    "*",
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:8000",
@@ -34,7 +33,7 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
