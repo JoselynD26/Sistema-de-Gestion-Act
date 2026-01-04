@@ -146,8 +146,8 @@ def fecha_actual():
     from datetime import datetime
     return datetime.now().year
 
-async def send_admin_notification(reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str, hora: str):
-    """Notifica al admin sobre una nueva solicitud de reserva con diseño premium."""
+async def send_admin_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str, hora: str):
+    """Notifica a los administradores sobre una nueva solicitud de reserva con diseño premium."""
     content = f"""
         <p>Hola <strong>Administrador</strong>,</p>
         <p>Se ha recibido una nueva solicitud de reserva que requiere su revisión técnica y administrativa.</p>
@@ -165,7 +165,7 @@ async def send_admin_notification(reserva_id: int, docente_nombre: str, aula_nom
     """
     await send_email_template(
         subject="🚀 Nueva Solicitud de Reserva Registrada",
-        recipients=[ADMIN_EMAIL],
+        recipients=admin_emails,
         title="Nueva Solicitud de Reserva",
         content_html=content
     )
@@ -192,8 +192,8 @@ async def send_status_update_email(email_docente: str, docente_nombre: str, aula
         content_html=content
     )
 
-async def send_cancellation_notification(reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str):
-    """Notifica al admin que un docente ha cancelado su reserva."""
+async def send_cancellation_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str):
+    """Notifica a los administradores que un docente ha cancelado su reserva."""
     content = f"""
         <p>Hola <strong>Administrador</strong>,</p>
         <p>Le informamos que un docente ha <strong>CANCELADO</strong> una solicitud de reserva previa.</p>
@@ -207,7 +207,7 @@ async def send_cancellation_notification(reserva_id: int, docente_nombre: str, a
     """
     await send_email_template(
         subject="⚠️ Reserva Cancelada por un Docente",
-        recipients=[ADMIN_EMAIL],
+        recipients=admin_emails,
         title="Notificación de Cancelación",
         content_html=content
     )

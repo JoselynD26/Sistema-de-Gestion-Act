@@ -2,6 +2,10 @@ import secrets
 import os
 from datetime import datetime, timedelta
 from typing import Dict
+from app.core.config import SessionLocal
+from app.models.usuario import Usuario
+from app.utils.email import send_verification_email_to_admins, send_email_template
+
 
 class EmailService:
     def __init__(self):
@@ -61,10 +65,6 @@ class EmailService:
         """Envía email con código de verificación a administradores existentes (Versión Async)"""
         print(f"DEBUG: Iniciando envio codigo admin a administradores para {solicitante_email}")
         try:
-            from app.core.config import SessionLocal
-            from app.models.usuario import Usuario
-            from app.utils.email import send_verification_email_to_admins
-            
             # Obtener administradores existentes
             db = SessionLocal()
             try:
@@ -99,8 +99,6 @@ class EmailService:
         """Envía email con contraseña temporal para recuperación (Versión Async)"""
         print(f"DEBUG: Iniciando envio email recuperacion para {email}")
         try:
-            from app.utils.email import send_email_template
-            
             # Rate Limiting: Ignorar envíos si pasó menos de 30 seg desde el último
             if email in self.last_sent:
                 last_time = self.last_sent[email]

@@ -9,6 +9,7 @@ from app.models.aula import Aula
 from app.models.horario import Horario
 from app.models.docente import Docente
 from app.models.sede import Sede
+from app.models.usuario import Usuario
 from app.schemas.reserva import CancelarReservaSchema
 from app.utils.email import send_admin_notification, send_status_update_email, send_cancellation_notification
 
@@ -137,21 +138,29 @@ def crear_reserva(request: dict, background_tasks: BackgroundTasks, db: Session 
     db.commit()
     db.refresh(nueva_reserva)
     
-    # Notificar al administrador (Background Task)
+    # Notificar a los administradores (Background Task)
     try:
         docente = db.query(Docente).filter(Docente.id == docente_id).first()
         docente_nombre = f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido"
         aula = db.query(Aula).filter(Aula.id == aula_id).first()
         aula_nombre = aula.nombre if aula else "Desconocido"
+
+        # Obtener todos los administradores para notificarles
+        admins = db.query(Usuario).filter(Usuario.rol == "admin").all()
+        admin_emails = [admin.correo for admin in admins] if admins else []
         
-        background_tasks.add_task(
-            send_admin_notification,
-            reserva_id=nueva_reserva.id,
-            docente_nombre=docente_nombre,
-            aula_nombre=aula_nombre,
-            fecha=fecha,
-            hora=f"{hora_inicio} - {hora_fin}"
-        )
+        if admin_emails:
+            background_tasks.add_task(
+                send_admin_notification,
+                admin_emails=admin_emails,
+                reserva_id=nueva_reserva.id,
+                docente_nombre=docente_nombre,
+                aula_nombre=aula_nombre,
+                fecha=fecha,
+                hora=f"{hora_inicio} - {hora_fin}"
+            )
+        else:
+            print("DEBUG: No se enviaron notificaciones porque no hay administradores registrados.")
     except Exception as e:
         print(f"Error al enviar notificación al admin: {e}")
 
@@ -221,17 +230,24 @@ def cancelar_reserva(
     reserva.estado = "cancelada"
     db.commit()
 
-    # Notificar al administrador sobre la cancelación
+    # Notificar a los administradores sobre la cancelación
     try:
         docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
         aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
-        background_tasks.add_task(
-            send_cancellation_notification,
-            reserva_id=reserva.id,
-            docente_nombre=f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido",
-            aula_nombre=aula.nombre if aula else "Desconocido",
-            fecha=reserva.fecha.strftime("%Y-%m-%d")
-        )
+        
+        # Obtener todos los administradores
+        admins = db.query(Usuario).filter(Usuario.rol == "admin").all()
+        admin_emails = [admin.correo for admin in admins] if admins else []
+        
+        if admin_emails:
+            background_tasks.add_task(
+                send_cancellation_notification,
+                admin_emails=admin_emails,
+                reserva_id=reserva.id,
+                docente_nombre=f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido",
+                aula_nombre=aula.nombre if aula else "Desconocido",
+                fecha=reserva.fecha.strftime("%Y-%m-%d")
+            )
     except Exception as e:
         print(f"Error al enviar notificación de cancelación: {e}")
 
