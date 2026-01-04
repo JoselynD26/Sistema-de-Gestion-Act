@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+﻿from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 from app.schemas.usuario import UsuarioCreate, UsuarioLogin, UsuarioChangePassword
@@ -15,7 +15,7 @@ def solicitar_codigo_admin(email: str, nombres: str, background_tasks: Backgroun
     try:
         print(f"DEBUG: Agregando tarea de email a BackgroundTasks para {email}")
         background_tasks.add_task(email_service.send_admin_verification_email, email, nombres)
-        return {"message": "Si hay administradores en el sistema, se les enviará un código de verificación."}
+        return {"message": "Si hay administradores en el sistema, se les enviarÃ¡ un cÃ³digo de verificaciÃ³n."}
     except Exception as e:
         print(f"ERROR solicitar_codigo_admin: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -26,11 +26,11 @@ class EmailRequest(BaseModel):
 @router.post("/solicitar-recuperacion/")
 def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
-    Solicita recuperación de contraseña:
+    Solicita recuperaciÃ³n de contraseÃ±a:
     1. Verifica que el correo exista
-    2. Genera una contraseña temporal
-    3. Actualiza el usuario con la nueva contraseña
-    4. Envía la contraseña por correo (via BackgroundTasks)
+    2. Genera una contraseÃ±a temporal
+    3. Actualiza el usuario con la nueva contraseÃ±a
+    4. EnvÃ­a la contraseÃ±a por correo (via BackgroundTasks)
     """
     from app.services.email_service import email_service
     import secrets
@@ -40,13 +40,13 @@ def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTa
     usuario = db.query(Usuario).filter(Usuario.correo == request.correo).first()
     if not usuario:
         print(f"DEBUG ALERT: Se intento recuperar contrasena para correo NO REGISTRADO: {request.correo}")
-        raise HTTPException(status_code=404, detail=f"El correo {request.correo} no está registrado en el sistema.")
+        raise HTTPException(status_code=404, detail=f"El correo {request.correo} no estÃ¡ registrado en el sistema.")
 
-    # 2. Generar contraseña temporal segura
+    # 2. Generar contraseÃ±a temporal segura
     alphabet = string.ascii_letters + string.digits
     temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
     
-    # 3. Actualizar contraseña en BD
+    # 3. Actualizar contraseÃ±a en BD
     hashed_password = obtener_hash_contrasena(temp_password)
     usuario.contrasena = hashed_password
     db.commit()
@@ -63,7 +63,7 @@ def solicitar_recuperacion(request: EmailRequest, background_tasks: BackgroundTa
             nombre_email
         )
         
-        return {"message": "[V2] Correo de recuperación solicitado. Revisa tu bandeja de entrada y spam."}
+        return {"message": "[V2] Correo de recuperaciÃ³n solicitado. Revisa tu bandeja de entrada y spam."}
         
     except Exception as e:
         print(f"Error en solicitar_recuperacion (envio correo): {e}")
@@ -80,12 +80,12 @@ def registrar_admin(
     codigo_verificacion: str,
     db: Session = Depends(get_db)
 ):
-    """Registra admin solo con código de verificación válido"""
+    """Registra admin solo con cÃ³digo de verificaciÃ³n vÃ¡lido"""
     from app.services.email_service import email_service
     
-    # Verificar código
+    # Verificar cÃ³digo
     if not email_service.verify_code(correo, codigo_verificacion):
-        raise HTTPException(status_code=400, detail="Código de verificación inválido o expirado")
+        raise HTTPException(status_code=400, detail="CÃ³digo de verificaciÃ³n invÃ¡lido o expirado")
     
     # Crear usuario admin
     from app.schemas.usuario import UsuarioCreate
@@ -105,29 +105,29 @@ def cambiar_contrasena(
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(get_db)
 ):
-    # Validar espacios en nueva contraseña
+    # Validar espacios en nueva contraseÃ±a
     if " " in datos.nueva_contrasena:
-        raise HTTPException(status_code=400, detail="La nueva contraseña no puede contener espacios")
+        raise HTTPException(status_code=400, detail="La nueva contraseÃ±a no puede contener espacios")
 
-    # Verificar contraseña actual
+    # Verificar contraseÃ±a actual
     if not verificar_contrasena(datos.contrasena_actual, usuario_actual.contrasena):
-        raise HTTPException(status_code=400, detail="La contraseña actual es incorrecta")
+        raise HTTPException(status_code=400, detail="La contraseÃ±a actual es incorrecta")
     
-    # Actualizar contraseña
+    # Actualizar contraseÃ±a
     usuario_actual.contrasena = obtener_hash_contrasena(datos.nueva_contrasena)
     db.commit()
     
-    return {"message": "Contraseña actualizada exitosamente"}
+    return {"message": "ContraseÃ±a actualizada exitosamente"}
 
 @router.post("/login/")
 def login(data: UsuarioLogin, db: Session = Depends(get_db)):
     # Validar espacios
     if " " in data.correo or " " in data.contrasena:
-        raise HTTPException(status_code=400, detail="El correo y la contraseña no pueden contener espacios")
+        raise HTTPException(status_code=400, detail="El correo y la contraseÃ±a no pueden contener espacios")
 
     usuario = autenticar_usuario(db, data.correo, data.contrasena)
     if not usuario:
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        raise HTTPException(status_code=401, detail="Credenciales invÃ¡lidas")
     token = crear_token(usuario.id, usuario.rol)
     
     response = {
@@ -160,10 +160,10 @@ async def debug_email_test(email: str):
     try:
         print(f"DEBUG_TEST: Iniciando prueba de email para {email}")
         await send_email_template(
-            subject=" Prueba de Conexi�n SMTP",
+            subject=" Prueba de Conexion SMTP",
             recipients=[email],
             title="Prueba de Sistema",
-            content_html="<p>Si recibes esto, la configuraci�n SMTP es <strong>correcta</strong>.</p>"
+            content_html="<p>Si recibes esto, la configuración SMTP es <strong>correcta</strong>.</p>"
         )
         return {"status": "success", "message": f"Email enviado a {email}. Revisa tu bandeja."}
     except Exception as e:
