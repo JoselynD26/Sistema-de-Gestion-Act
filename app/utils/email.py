@@ -1,35 +1,30 @@
-﻿from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
-from pydantic import EmailStr, BaseModel
-from typing import List
-from app.core.config import (
-    MAIL_USERNAME, MAIL_PASSWORD, MAIL_FROM, 
-    MAIL_PORT, MAIL_SERVER, MAIL_FROM_NAME, ADMIN_EMAIL
-)
+﻿"""
+Email utilities using Resend API - Simple, reliable, and modern
+"""
 import os
+import resend
+from typing import List
+from datetime import datetime
+from dotenv import load_dotenv
 
-class EmailSchema(BaseModel):
-    email: List[EmailStr]
+# Load environment variables
+load_dotenv()
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=MAIL_USERNAME,
-    MAIL_PASSWORD=MAIL_PASSWORD,
-    MAIL_FROM=MAIL_FROM,
-    MAIL_PORT=465,  # Force port 465 for SSL/TLS (more reliable on Render)
-    MAIL_SERVER=MAIL_SERVER,
-    MAIL_FROM_NAME=MAIL_FROM_NAME,
-    MAIL_STARTTLS=False,  # Disable STARTTLS for port 465
-    MAIL_SSL_TLS=True,    # Enable SSL/TLS for port 465
-    USE_CREDENTIALS=True,
-    VALIDATE_CERTS=True,
-    TEMPLATE_FOLDER=None
-)
+# Load Resend configuration from environment
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
+RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "Sistema Yavirac")
 
-print(f"DEBUG EMAIL CONFIG: Server={MAIL_SERVER}:{MAIL_PORT}, User={MAIL_USERNAME}, From={MAIL_FROM}")
+# Initialize Resend
+if RESEND_API_KEY:
+    resend.api_key = RESEND_API_KEY
+    print(f"DEBUG EMAIL CONFIG: Using Resend API with from={RESEND_FROM_EMAIL}")
+else:
+    print("WARNING: RESEND_API_KEY not found in environment variables!")
 
-fastmail = FastMail(conf)
 
-async def send_email_template(subject: str, recipients: List[EmailStr], title: str, content_html: str, footer_text: str = "Sistema de GestiÃ³n AcadÃ©mica - Yavirac"):
-    """FunciÃ³n base para enviar correos con un diseÃ±o premium."""
+def send_email_template(subject: str, recipients: List[str], title: str, content_html: str, footer_text: str = "Sistema de Gestión Académica - Yavirac"):
+    """Función base para enviar correos con un diseño premium usando Resend."""
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -126,40 +121,39 @@ async def send_email_template(subject: str, recipients: List[EmailStr], title: s
             </div>
             <div class="footer">
                 <p>&copy; {fecha_actual()} {footer_text}</p>
-                <p>Este es un correo automÃ¡tico, por favor no lo respondas.</p>
+                <p>Este es un correo automático, por favor no lo respondas.</p>
             </div>
         </div>
     </body>
     </html>
     """
     
-    message = MessageSchema(
-        subject=subject,
-        recipients=recipients,
-        body=html,
-        subtype=MessageType.html
-    )
-    
-    print(f"DEBUG EMAIL_UTILS: Preparando '{subject}' para {recipients}...")
-    print(f"DEBUG EMAIL_UTILS_CONFIG: Server={MAIL_SERVER}:{MAIL_PORT}, User={MAIL_USERNAME}, From={MAIL_FROM}")
+    print(f"DEBUG EMAIL: Preparando '{subject}' para {recipients}...")
     try:
-        await fastmail.send_message(message)
-        print(f"DEBUG EMAIL_UTILS: '{subject}' enviado satisfactoriamente.")
+        params = {
+            "from": f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>",
+            "to": recipients,
+            "subject": subject,
+            "html": html
+        }
+        
+        response = resend.Emails.send(params)
+        print(f"DEBUG EMAIL: '{subject}' enviado satisfactoriamente. Response: {response}")
+        return True
     except Exception as e:
-        print(f"DEBUG EMAIL ERROR: FallÃ³ el envÃ­o de '{subject}'. Error: {str(e)}")
+        print(f"DEBUG EMAIL ERROR: Falló el envío de '{subject}'. Error: {str(e)}")
         import traceback
         traceback.print_exc()
-        raise e
+        return False
 
 def fecha_actual():
-    from datetime import datetime
     return datetime.now().year
 
-async def send_admin_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str, hora: str):
-    """Notifica a los administradores sobre una nueva solicitud de reserva con diseÃ±o premium."""
+def send_admin_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str, hora: str):
+    """Notifica a los administradores sobre una nueva solicitud de reserva con diseño premium."""
     content = f"""
         <p>Hola <strong>Administrador</strong>,</p>
-        <p>Se ha recibido una nueva solicitud de reserva que requiere su revisiÃ³n tÃ©cnica y administrativa.</p>
+        <p>Se ha recibido una nueva solicitud de reserva que requiere su revisión técnica y administrativa.</p>
         <table class="info-table">
             <tr><td class="label">Docente</td><td>{docente_nombre}</td></tr>
             <tr><td class="label">Aula</td><td>{aula_nombre}</td></tr>
@@ -167,45 +161,45 @@ async def send_admin_notification(admin_emails: List[str], reserva_id: int, doce
             <tr><td class="label">Horario</td><td>{hora}</td></tr>
             <tr><td class="label">Estado</td><td><span class="status-badge status-pendiente">Pendiente</span></td></tr>
         </table>
-        <p>Por favor, ingrese al panel de administraciÃ³n para gestionar esta solicitud.</p>
+        <p>Por favor, ingrese al panel de administración para gestionar esta solicitud.</p>
         <div style="text-align: center;">
             <a href="https://sistemagestionyavirac.netlify.app/" class="button">Gestionar Reservas</a>
         </div>
     """
-    await send_email_template(
-        subject="ðŸš€ Nueva Solicitud de Reserva Registrada",
+    return send_email_template(
+        subject="🚀 Nueva Solicitud de Reserva Registrada",
         recipients=admin_emails,
         title="Nueva Solicitud de Reserva",
         content_html=content
     )
 
-async def send_status_update_email(email_docente: str, docente_nombre: str, aula_nombre: str, fecha: str, nuevo_estado: str):
-    """Notifica al docente sobre el cambio de estado con diseÃ±o premium."""
+def send_status_update_email(email_docente: str, docente_nombre: str, aula_nombre: str, fecha: str, nuevo_estado: str):
+    """Notifica al docente sobre el cambio de estado con diseño premium."""
     estado_class = "status-aprobada" if nuevo_estado.upper() == "APROBADA" else "status-rechazada"
-    icon = "âœ…" if nuevo_estado.upper() == "APROBADA" else "âŒ"
+    icon = "✅" if nuevo_estado.upper() == "APROBADA" else "❌"
     
     content = f"""
         <p>Estimado/a <strong>{docente_nombre}</strong>,</p>
-        <p>Le informamos que se ha procesado su solicitud de reserva para el aula indicada abajo.</p>
+        <p>Le informamos que el estado de su reserva ha sido actualizado:</p>
         <table class="info-table">
             <tr><td class="label">Aula</td><td>{aula_nombre}</td></tr>
             <tr><td class="label">Fecha</td><td>{fecha}</td></tr>
             <tr><td class="label">Nuevo Estado</td><td><span class="status-badge {estado_class}">{nuevo_estado}</span></td></tr>
         </table>
-        <p>Si tiene alguna pregunta, por favor contacte con el departamento de coordinaciÃ³n acadÃ©mica.</p>
+        <p>Si tiene alguna pregunta, por favor contacte con el departamento de coordinación académica.</p>
     """
-    await send_email_template(
-        subject=f"{icon} ActualizaciÃ³n de su Reserva: {nuevo_estado}",
+    return send_email_template(
+        subject=f"{icon} Actualización de su Reserva: {nuevo_estado}",
         recipients=[email_docente],
-        title="ActualizaciÃ³n de Reserva",
+        title="Actualización de Reserva",
         content_html=content
     )
 
-async def send_cancellation_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str):
-    """Notifica a los administradores que un docente ha cancelado su reserva."""
+def send_cancellation_notification(admin_emails: List[str], reserva_id: int, docente_nombre: str, aula_nombre: str, fecha: str):
+    """Notifica a los administradores sobre una cancelación de reserva."""
     content = f"""
         <p>Hola <strong>Administrador</strong>,</p>
-        <p>Le informamos que un docente ha <strong>CANCELADO</strong> una solicitud de reserva previa.</p>
+        <p>Se ha <strong>cancelado</strong> una reserva previamente registrada:</p>
         <table class="info-table">
             <tr><td class="label">Docente</td><td>{docente_nombre}</td></tr>
             <tr><td class="label">Aula</td><td>{aula_nombre}</td></tr>
@@ -214,15 +208,15 @@ async def send_cancellation_notification(admin_emails: List[str], reserva_id: in
         </table>
         <p>El espacio correspondiente ahora se encuentra nuevamente disponible para otros docentes.</p>
     """
-    await send_email_template(
-        subject="âš ï¸ Reserva Cancelada por un Docente",
+    return send_email_template(
+        subject="⚠️ Reserva Cancelada por un Docente",
         recipients=admin_emails,
-        title="NotificaciÃ³n de CancelaciÃ³n",
+        title="Notificación de Cancelación",
         content_html=content
     )
 
-async def send_verification_email_to_admins(admins: List[dict], solicitante_email: str, solicitante_nombres: str, code: str):
-    """EnvÃ­a el cÃ³digo de verificaciÃ³n personalizado a cada administrador."""
+def send_admin_verification_codes(admins: List[dict], solicitante_email: str, solicitante_nombres: str, code: str):
+    """Envía el código de verificación personalizado a cada administrador."""
     for admin in admins:
         admin_email = admin.get("correo")
         admin_nombre = admin.get("nombres", "Administrador")
@@ -231,17 +225,16 @@ async def send_verification_email_to_admins(admins: List[dict], solicitante_emai
             <p>Hola <strong>{admin_nombre}</strong>,</p>
             <p><strong>{solicitante_nombres}</strong> ({solicitante_email}) ha solicitado acceso administrativo al sistema.</p>
             <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; border: 1px solid #e9ecef;">
-                <p style="margin: 0; color: #6c757d; font-size: 14px;">CÃ“DIGO DE VERIFICACIÃ“N</p>
+                <p style="margin: 0; color: #6c757d; font-size: 14px;">CÓDIGO DE VERIFICACIÓN</p>
                 <h2 style="margin: 10px 0; color: #1e3c72; font-size: 32px; letter-spacing: 5px;">{code}</h2>
-                <p style="margin: 0; color: #dc3545; font-size: 12px;">Este cÃ³digo expira en 10 minutos.</p>
+                <p style="margin: 0; color: #dc3545; font-size: 12px;">Este código expira en 10 minutos.</p>
             </div>
-            <p>Solo comparte este cÃ³digo si reconoces y autorizas esta solicitud.</p>
+            <p>Solo comparte este código si reconoces y autorizas esta solicitud.</p>
         """
         
-        await send_email_template(
-            subject="ðŸ” AutorizaciÃ³n de Nuevo Administrador",
+        send_email_template(
+            subject="🔐 Autorización de Nuevo Administrador",
             recipients=[admin_email],
-            title="AutorizaciÃ³n Requerida",
+            title="Autorización Requerida",
             content_html=content
         )
-
