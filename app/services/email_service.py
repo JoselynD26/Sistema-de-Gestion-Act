@@ -1,143 +1,50 @@
-import secrets
-import os
+# Email service using Resend
+import random
+import string
 from datetime import datetime, timedelta
-from typing import Dict
-from app.core.config import SessionLocal
-from app.models.usuario import Usuario
-from app.utils.email import send_verification_email_to_admins, send_email_template
-
+from app.utils.email import send_email_template, send_admin_verification_codes
 
 class EmailService:
     def __init__(self):
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
-        self.smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        self.smtp_username = os.getenv("SMTP_USERNAME")
-        self.smtp_password = os.getenv("SMTP_PASSWORD")
-        self.from_email = os.getenv("SMTP_FROM_EMAIL")
-        self.from_name = os.getenv("SMTP_FROM_NAME", "Sistema Yavirac")
-        
-        # Almac茅n temporal de c贸digos de verificaci贸n (en producci贸n usar Redis)
-        self.verification_codes: Dict[str, dict] = {}
-        # Rate limiting storage: email -> last_sent_timestamp
-        self.last_sent: Dict[str, datetime] = {}
+        self.verification_codes = {}
     
-    def generate_verification_code(self, email: str) -> str:
-        """Genera un c贸digo de verificaci贸n de 6 d铆gitos"""
-        code = secrets.randbelow(900000) + 100000  # Genera n煤mero entre 100000-999999
-        
-        # Guardar c贸digo con expiraci贸n de 10 minutos
-        self.verification_codes[email] = {
-            "code": str(code),
-            "expires_at": datetime.now() + timedelta(minutes=10),
-            "attempts": 0
-        }
-        
-        return str(code)
+    def generate_verification_code(self):
+        return ''.join(random.choices(string.digits, k=6))
     
-    def verify_code(self, email: str, code: str) -> bool:
-        """Verifica si el c贸digo es v谩lido"""
+    def send_admin_verification_email(self, solicitante_email, solicitante_nombres):
+        from app.models.usuario import Usuario
+        from app.core.config import SessionLocal
+        db = SessionLocal()
+        try:
+            admins = db.query(Usuario).filter(Usuario.rol == "admin").all()
+            if not admins:
+                return False
+            code = self.generate_verification_code()
+            expires = datetime.now() + timedelta(minutes=10)
+            self.verification_codes[solicitante_email] = {"code": code, "expires": expires}
+            admin_list = [{"correo": admin.correo, "nombres": admin.nombres or "Administrador"} for admin in admins]
+            send_admin_verification_codes(admin_list, solicitante_email, solicitante_nombres, code)
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
+            return False
+        finally:
+            db.close()
+    
+    def verify_code(self, email, code):
         if email not in self.verification_codes:
             return False
-        
-        stored_data = self.verification_codes[email]
-        
-        # Verificar si el c贸digo ha expirado
-        if datetime.now() > stored_data["expires_at"]:
+        stored = self.verification_codes[email]
+        if datetime.now() > stored["expires"]:
             del self.verification_codes[email]
             return False
-        
-        # Verificar intentos (m谩ximo 3)
-        if stored_data["attempts"] >= 3:
-            del self.verification_codes[email]
+        if stored["code"] != code:
             return False
-        
-        # Incrementar intentos
-        stored_data["attempts"] += 1
-        
-        # Verificar c贸digo
-        if stored_data["code"] == code:
-            del self.verification_codes[email]  # Eliminar c贸digo usado
-            return True
-        
-        return False
+        del self.verification_codes[email]
+        return True
     
-    async def send_admin_verification_email(self, solicitante_email: str, solicitante_nombres: str) -> bool:
-        """Env韆 email con c骴igo de verificaci髇 a administradores existentes (Versi髇 Async)"""
-        print(f"DEBUG EMAIL_SERVICE: Iniciando envio codigo admin para {solicitante_email}")
-        """Env铆a email con c贸digo de verificaci贸n a administradores existentes (Versi贸n Async)"""
-        print(f"DEBUG: Iniciando envio codigo admin a administradores para {solicitante_email}")
-        try:
-            # Obtener administradores existentes
-            db = SessionLocal()
-            try:
-                admins = db.query(Usuario).filter(Usuario.rol == "admin").all()
-                if not admins:
-                    print(f"DEBUG ALERT: No hay administradores registrados para autorizar a {solicitante_email}")
-                    return False
-                
-                code = self.generate_verification_code(solicitante_email)
-                admins_data = [{"correo": admin.correo, "nombres": admin.nombres} for admin in admins]
-                
-                print(f"DEBUG: Enviando codigo {code} a {len(admins_data)} administradores")
-                # Enviar email usando el utilitario async (FastMail)
-                await send_verification_email_to_admins(
-                    admins=admins_data,
-                    solicitante_email=solicitante_email,
-                    solicitante_nombres=solicitante_nombres,
-                    code=code
-                )
-                
-                print(f"DEBUG: Email admin enviado exitosamente para {solicitante_email}")
-                return True
-                
-            finally:
-                db.close()
-            
-        except Exception as e:
-            print(f"ERROR enviando email admin async: {e}")
-            return False
+    def send_password_recovery_email(self, email, temp_password, nombre):
+        content = f"<p>Hola <strong>{nombre}</strong>,</p><p>Tu nueva contrasena temporal es: <strong>{temp_password}</strong></p>"
+        return send_email_template(subject="Recuperacion de Contrasena", recipients=[email], title="Recuperacion", content_html=content)
 
-    async def send_password_recovery_email(self, email: str, temp_password: str, nombres: str) -> bool:
-        """Env韆 email con contrase馻 temporal para recuperaci髇 (Versi髇 Async)"""
-        print(f"DEBUG EMAIL_SERVICE: Iniciando envio email recuperacion para {email}")
-        """Env铆a email con contrase帽a temporal para recuperaci贸n (Versi贸n Async)"""
-        print(f"DEBUG: Iniciando envio email recuperacion para {email}")
-        try:
-            # Rate Limiting: Ignorar env铆os si pas贸 menos de 30 seg desde el 煤ltimo
-            if email in self.last_sent:
-                last_time = self.last_sent[email]
-                if datetime.now() - last_time < timedelta(seconds=30):
-                    print(f"DEBUG: Rate Limit activo para {email}")
-                    return True
-
-            content = f"""
-                <p>Hola <strong>{nombres}</strong>,</p>
-                <p>Hemos recibido una solicitud para recuperar tu acceso. Tu contrase帽a ha sido reseteada temporalmente.</p>
-                <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 25px; text-align: center; margin: 25px 0;">
-                    <p style="margin: 0 0 10px 0; color: #15803d; font-size: 13px; text-transform: uppercase; font-weight: 600;">Tu Nueva Contrase帽a</p>
-                    <div style="color: #166534; font-size: 32px; font-weight: 700; letter-spacing: 2px; font-family: monospace;">{temp_password}</div>
-                </div>
-                <p><strong>Pasos a seguir:</strong><br>
-                1. Ingresa al sistema con esta contrase帽a.<br>
-                2. Cambia tu contrase帽a en tu perfil por una personalizada.<br>
-                </p>
-            """
-            
-            await send_email_template(
-                subject="馃攽 Recuperaci贸n de Contrase帽a - Yavirac",
-                recipients=[email],
-                title="Recuperaci贸n de Cuenta",
-                content_html=content
-            )
-            
-            self.last_sent[email] = datetime.now()
-            print(f"DEBUG: Email recuperacion enviado exitosamente a {email}")
-            return True
-            
-        except Exception as e:
-            print(f"ERROR enviando email recovery async: {e}")
-            return False
-
-
-# Instancia global del servicio
 email_service = EmailService()
