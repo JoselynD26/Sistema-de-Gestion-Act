@@ -14,8 +14,8 @@ from app.api import (
 
 app = FastAPI(
     title="Sistema Académico",
-    description="API protegida con JWT por rol",
-    version="1.0.0"
+    description="API protegida con JWT por rol - Resend Email Integration",
+    version="1.1.0"
 )
 
 # =========================
