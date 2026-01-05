@@ -264,21 +264,33 @@ def obtener_cursos_disponibles(sede_id: int, db: Session = Depends(get_db)):
 
 @router.get("/mi-escritorio/{docente_id}")
 def obtener_mi_escritorio(docente_id: int, db: Session = Depends(get_db)):
-    """Obtiene el escritorio asignado al docente"""
+    """Obtiene el escritorio asignado al docente con información completa"""
     from app.models.escritorio import Escritorio
+    from app.models.sala_profesores import SalaProfesores
+    from app.models.carrera import Carrera
     
     escritorio = db.query(Escritorio).filter(Escritorio.docente_id == docente_id).first()
     
-    if escritorio:
-        return {
-            "id": escritorio.id,
-            "codigo": escritorio.codigo,
-            "sala_id": escritorio.sala_id,
-            "carrera_id": escritorio.carrera_id,
-            "asignado": True
-        }
-    else:
+    if not escritorio:
         return {"asignado": False}
+    
+    # Obtener información de la sala
+    sala = db.query(SalaProfesores).filter(SalaProfesores.id == escritorio.sala_id).first()
+    
+    # Obtener información de la carrera
+    carrera = db.query(Carrera).filter(Carrera.id == escritorio.carrera_id).first()
+    
+    return {
+        "id": escritorio.id,
+        "codigo": escritorio.codigo,
+        "sala_id": escritorio.sala_id,
+        "sala_nombre": sala.nombre if sala else "N/A",
+        "carrera_id": escritorio.carrera_id,
+        "carrera_nombre": carrera.nombre if carrera else "N/A",
+        "estado": escritorio.estado,
+        "jornada": escritorio.jornada,
+        "asignado": True
+    }
 
 @router.get("/escritorios-disponibles/{sede_id}")
 def obtener_escritorios_disponibles(sede_id: int, db: Session = Depends(get_db)):
