@@ -18,24 +18,26 @@ app = FastAPI(
     version="1.1.0"
 )
 
-# =========================
-# 🔥 CORS GLOBAL (BASE)
-# =========================
 origins = [
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:8000",
+    "http://localhost:8080",
     "https://front-sistema-8hz.pages.dev",
     "https://sistema-de-gestion-act-bj8j.onrender.com",
     "https://sistemagestionyavirac.netlify.app",
 ]
 
+# Configuración de CORS mejorada para manejar preflight requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.front-sistema-8hz\.pages\.dev|https://.*\.pages\.dev",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=3600,  # Cache preflight requests por 1 hora
 )
 
 # =========================
