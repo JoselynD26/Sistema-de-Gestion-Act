@@ -404,7 +404,8 @@ def obtener_mi_croquis(docente_id: int, db: Session = Depends(get_db)):
     }
 
 @router.delete("/{reserva_id}")
-def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
+@router.delete("/{reserva_id}/", include_in_schema=False)
+def eliminar_reserva(reserva_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     Elimina una reserva de la base de datos.
     Standard REST DELETE.
@@ -414,10 +415,25 @@ def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
     if not reserva:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     
-    # Opcional: Validar si se puede eliminar según reglas de negocio
-    # Por ejemplo, si es una reserva pasada o si ya fue aprobada
-    # if reserva.estado == 'aprobada':
-    #     raise HTTPException(status_code=400, detail="No se puede eliminar una reserva aprobada")
+    # Si la reserva estaba aprobada, notificar a los admins que se ha liberado el aula
+    if reserva.estado == 'aprobada':
+        try:
+            docente = db.query(Docente).filter(Docente.id == reserva.id_docente).first()
+            aula = db.query(Aula).filter(Aula.id == reserva.id_aula).first()
+            admins = db.query(Usuario).filter(Usuario.rol == "admin").all()
+            admin_emails = [admin.correo for admin in admins] if admins else []
+            
+            if admin_emails:
+                background_tasks.add_task(
+                    send_cancellation_notification,
+                    admin_emails=admin_emails,
+                    reserva_id=reserva.id,
+                    docente_nombre=f"{docente.nombres} {docente.apellidos}" if docente else "Desconocido",
+                    aula_nombre=aula.nombre if aula else "Desconocido",
+                    fecha=reserva.fecha.strftime("%Y-%m-%d")
+                )
+        except Exception as e:
+            print(f"Error al preparar notificación de liberación: {e}")
 
     db.delete(reserva)
     db.commit()
